@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Role, sessionStore } from '@/lib/sessionData'
+import { useStepForm } from '@/hooks/useStepForm'
 import RolesList from './roles/RolesList'
 import RoleForm from './roles/RoleForm'
 
@@ -9,6 +10,7 @@ export default function RoleStep() {
   const [roles, setRoles] = useState<Role[]>([])
   const [viewMode, setViewMode] = useState<'list' | 'form'>('list')
   const [editingRole, setEditingRole] = useState<Role | null>(null)
+  const { enterFormMode, exitFormMode } = useStepForm()
 
   const loadData = () => {
     const currentSequence = sessionStore.getCurrentSequence()
@@ -25,11 +27,41 @@ export default function RoleStep() {
   const handleCreateRole = () => {
     setEditingRole(null)
     setViewMode('form')
+    
+    // Utiliser le nouveau système
+    enterFormMode(
+      () => {
+        // Cette fonction sera appelée quand on clique sur "Créer" dans le footer
+        // On a besoin d'une référence vers la fonction de soumission du formulaire
+        // Pour l'instant, on va juste fermer le formulaire et on implémentera la logique plus tard
+        console.log('Submit role form')
+      },
+      () => {
+        // Fonction d'annulation - le contexte gère automatiquement la sortie du mode formulaire
+        setViewMode('list')
+        setEditingRole(null)
+      },
+      'Créer'
+    )
   }
 
   const handleEditRole = (role: Role) => {
     setEditingRole(role)
     setViewMode('form')
+    
+    // Utiliser le nouveau système
+    enterFormMode(
+      () => {
+        // Cette fonction sera appelée quand on clique sur "Modifier" dans le footer
+        console.log('Submit role form')
+      },
+      () => {
+        // Fonction d'annulation - le contexte gère automatiquement la sortie du mode formulaire
+        setViewMode('list')
+        setEditingRole(null)
+      },
+      'Modifier'
+    )
   }
 
   const handleDeleteRole = (roleId: string) => {
@@ -55,11 +87,15 @@ export default function RoleStep() {
     loadData()
     setViewMode('list')
     setEditingRole(null)
+    
+    // Sortir du mode formulaire
+    exitFormMode()
   }
 
   const handleBackToList = () => {
     setViewMode('list')
     setEditingRole(null)
+    // Le contexte gère automatiquement la sortie du mode formulaire via triggerCancel
   }
 
   return (

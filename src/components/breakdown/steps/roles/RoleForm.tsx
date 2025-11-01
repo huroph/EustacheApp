@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Role } from '@/lib/sessionData'
 import Button from '@/components/ui/Button'
 
@@ -8,9 +8,10 @@ interface RoleFormProps {
   role?: Role | null
   onSave: (roleData: Omit<Role, 'id' | 'createdAt'>) => void
   onCancel: () => void
+  submitTrigger?: number
 }
 
-export default function RoleForm({ role, onSave, onCancel }: RoleFormProps) {
+export default function RoleForm({ role, onSave, onCancel, submitTrigger }: RoleFormProps) {
   const [formData, setFormData] = useState<Omit<Role, 'id' | 'createdAt'>>({
     type: 'Principale',
     nomRole: '',
@@ -87,6 +88,15 @@ export default function RoleForm({ role, onSave, onCancel }: RoleFormProps) {
     e.preventDefault()
     onSave(formData)
   }
+
+  // Déclencher le submit quand submitTrigger change
+  const prevSubmitTrigger = useRef(submitTrigger)
+  useEffect(() => {
+    if (submitTrigger && submitTrigger !== prevSubmitTrigger.current) {
+      prevSubmitTrigger.current = submitTrigger
+      onSave(formData)
+    }
+  }, [submitTrigger, formData, onSave])
 
   const updateField = (field: keyof typeof formData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -350,15 +360,6 @@ export default function RoleForm({ role, onSave, onCancel }: RoleFormProps) {
             </div>
           </div>
         </div>
-      </div>
-
-      <div className="flex items-center justify-end space-x-4 pt-4 border-t border-gray-600">
-        <Button variant="outline" onClick={onCancel} type="button">
-          Annuler
-        </Button>
-        <Button type="submit">
-          {role ? 'Valider' : 'Créer'}
-        </Button>
       </div>
     </form>
   )

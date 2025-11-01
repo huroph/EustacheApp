@@ -2,6 +2,7 @@
 
 import Button from '@/components/ui/Button'
 import { sessionStore } from '@/lib/sessionData'
+import { useFooter } from '@/contexts/FooterContext'
 
 interface StepFooterProps {
   currentIndex: number
@@ -11,9 +12,16 @@ interface StepFooterProps {
   onSubmit: () => void
 }
 
-export default function StepFooter({ currentIndex, total, onPrev, onNext, onSubmit }: StepFooterProps) {
+export default function StepFooter({ 
+  currentIndex, 
+  total, 
+  onPrev, 
+  onNext, 
+  onSubmit
+}: StepFooterProps) {
   const isFirst = currentIndex === 0
   const isLast = currentIndex === total - 1
+  const { footerState, triggerSubmit, triggerCancel } = useFooter()
   
   // Informations sur la séquence courante
   const currentSequence = sessionStore.getCurrentSequence()
@@ -60,33 +68,57 @@ export default function StepFooter({ currentIndex, total, onPrev, onNext, onSubm
       
       {/* Navigation */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Button 
-            type="button" 
-            variant="secondary" 
-            onClick={onPrev}
-            disabled={isFirst}
-          >
-            Précédent
-          </Button>
-          <span className="text-gray-400 text-sm">
-            {currentIndex + 1} of {total}
-          </span>
-        </div>
-        
-        {isLast ? (
-          <Button 
-            type="button" 
-            variant="default" 
-            onClick={onSubmit}
-            className="bg-green-600 hover:bg-green-700"
-          >
-            Créer la séquence
-          </Button>
+        {footerState.isFormMode ? (
+          // Mode formulaire : Annuler / Créer
+          <>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={triggerCancel}
+            >
+              Annuler
+            </Button>
+            <Button 
+              type="button" 
+              variant="default" 
+              onClick={triggerSubmit}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {footerState.submitLabel}
+            </Button>
+          </>
         ) : (
-          <Button type="button" variant="default" onClick={onNext}>
-            Suivant
-          </Button>
+          // Mode navigation normale : Précédent / Suivant
+          <>
+            <div className="flex items-center space-x-4">
+              <Button 
+                type="button" 
+                variant="secondary" 
+                onClick={onPrev}
+                disabled={isFirst}
+              >
+                Précédent
+              </Button>
+              <span className="text-gray-400 text-sm">
+                {currentIndex + 1} of {total}
+              </span>
+            </div>
+            
+            {isLast ? (
+              <Button 
+                type="button" 
+                variant="default" 
+                onClick={onSubmit}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                Créer la séquence
+              </Button>
+            ) : (
+              <Button type="button" variant="default" onClick={onNext}>
+                Suivant
+              </Button>
+            )}
+          </>
         )}
       </div>
     </div>

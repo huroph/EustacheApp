@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Costume, Role, sessionStore } from '@/lib/sessionData'
+import { useStepForm } from '@/hooks/useStepForm'
 import CostumesList from './costumes/CostumesList'
 import CostumeForm from './costumes/CostumeForm'
 
@@ -11,6 +12,7 @@ export default function CostumeStep() {
   const [viewMode, setViewMode] = useState<'list' | 'form'>('list')
   const [editingCostume, setEditingCostume] = useState<Costume | null>(null)
   const [roleNames, setRoleNames] = useState<{ [roleId: string]: string }>({})
+  const { enterFormMode, exitFormMode } = useStepForm()
 
   const loadData = () => {
     const currentSequence = sessionStore.getCurrentSequence()
@@ -37,11 +39,39 @@ export default function CostumeStep() {
   const handleCreateCostume = () => {
     setEditingCostume(null)
     setViewMode('form')
+    
+    // Utiliser le nouveau système
+    enterFormMode(
+      () => {
+        // Cette fonction sera appelée quand on clique sur "Créer" dans le footer
+        console.log('Submit costume form')
+      },
+      () => {
+        // Fonction d'annulation - le contexte gère automatiquement la sortie du mode formulaire
+        setViewMode('list')
+        setEditingCostume(null)
+      },
+      'Créer'
+    )
   }
 
   const handleEditCostume = (costume: Costume) => {
     setEditingCostume(costume)
     setViewMode('form')
+    
+    // Utiliser le nouveau système
+    enterFormMode(
+      () => {
+        // Cette fonction sera appelée quand on clique sur "Modifier" dans le footer
+        console.log('Submit costume form')
+      },
+      () => {
+        // Fonction d'annulation - le contexte gère automatiquement la sortie du mode formulaire
+        setViewMode('list')
+        setEditingCostume(null)
+      },
+      'Modifier'
+    )
   }
 
   const handleDeleteCostume = (costumeId: string) => {
@@ -67,11 +97,15 @@ export default function CostumeStep() {
     loadData()
     setViewMode('list')
     setEditingCostume(null)
+    
+    // Sortir du mode formulaire
+    exitFormMode()
   }
 
   const handleBackToList = () => {
     setViewMode('list')
     setEditingCostume(null)
+    // Le contexte gère automatiquement la sortie du mode formulaire via triggerCancel
   }
 
   return (

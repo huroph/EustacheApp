@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { sessionStore } from '@/lib/sessionData'
+import { FooterProvider } from '@/contexts/FooterContext'
 import StepHeader from './StepHeader'
 import StepFooter from './StepFooter'
 import GeneralStep from './steps/GeneralStep'
@@ -203,48 +204,43 @@ export default function CreateSequenceForm({ onCancel, editMode = false, sequenc
       case "Son":
         return <SonStep sequenceId={currentSequence?.id || ''} />
       case "Machinerie":
-        return <MachinerieStep />
+        return <MachinerieStep sequenceId={currentSequence?.id || ''} />
       default:
         return <GeneralStep formData={formData} setFormData={setFormData} showSuccess={showSuccess} />
     }
   }
 
   return (
-    <div className="bg-slate-800 rounded-lg h-full flex flex-col">
-      {/* Header */}
-      <div className="flex-shrink-0 p-4 md:p-6 border-b border-slate-600">
-        <div className="flex items-center justify-between">
-          <StepHeader
-            current={currentStep}
-            steps={STEPS}
-            onSelect={goTo}
-            onClose={onCancel}
+    <FooterProvider>
+      <div className="bg-slate-800 rounded-lg h-full flex flex-col">
+        {/* Header */}
+        <div className="flex-shrink-0 p-4 md:p-6 border-b border-slate-600">
+          <div className="flex items-center justify-between">
+            <StepHeader
+              current={currentStep}
+              steps={STEPS}
+              onSelect={goTo}
+              onClose={onCancel}
+            />
+          </div>
+        </div>
+
+        {/* Content - Scrollable */}
+        <div className="flex-1 overflow-y-auto p-4 md:p-6">
+          {renderStepContent()}
+        </div>
+
+        {/* Footer */}
+        <div className="flex-shrink-0 p-4 md:p-6 border-t border-slate-600">
+          <StepFooter
+            currentIndex={currentIndex}
+            total={STEPS.length}
+            onPrev={goPrev}
+            onNext={goNext}
+            onSubmit={handleSubmit}
           />
-          {/* Bouton debug temporaire */}
-          {/* <button
-            onClick={debugSequence}
-            className="ml-4 text-xs bg-yellow-600 hover:bg-yellow-700 text-white px-2 py-1 rounded"
-          >
-            Debug
-          </button> */}
         </div>
       </div>
-
-      {/* Content - Scrollable */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-6">
-        {renderStepContent()}
-      </div>
-
-      {/* Footer */}
-      <div className="flex-shrink-0 p-4 md:p-6 border-t border-slate-600">
-        <StepFooter
-          currentIndex={currentIndex}
-          total={STEPS.length}
-          onPrev={goPrev}
-          onNext={goNext}
-          onSubmit={handleSubmit}
-        />
-      </div>
-    </div>
+    </FooterProvider>
   )
 }

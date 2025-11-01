@@ -2,16 +2,17 @@
 
 import { sessionStore, Machinerie, EquipeTechnique } from '@/lib/sessionData'
 import Button from '@/components/ui/Button'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 interface MachinerieFormProps {
   sequenceId: string
   machinerie?: Machinerie // Pour l'édition
   onCancel: () => void
   onSuccess: () => void
+  submitTrigger?: number // Prop pour déclencher le submit depuis l'extérieur
 }
 
-export function MachinerieForm({ sequenceId, machinerie, onCancel, onSuccess }: MachinerieFormProps) {
+export function MachinerieForm({ sequenceId, machinerie, onCancel, onSuccess, submitTrigger }: MachinerieFormProps) {
   const [formData, setFormData] = useState<{
     nom: string
     statut: 'A validé' | 'En attente' | 'Validé' | 'Reporté'
@@ -95,6 +96,30 @@ export function MachinerieForm({ sequenceId, machinerie, onCancel, onSuccess }: 
       setErrors(prev => ({ ...prev, [field]: '' }))
     }
   }
+
+  // Déclencher le submit quand submitTrigger change
+  const prevSubmitTrigger = useRef(submitTrigger)
+  useEffect(() => {
+    if (submitTrigger && submitTrigger !== prevSubmitTrigger.current) {
+      prevSubmitTrigger.current = submitTrigger
+      
+      if (!validate()) return
+      
+      setIsSubmitting(true)
+      try {
+        if (machinerie) {
+          sessionStore.updateMachinerie(sequenceId, machinerie.id, formData)
+        } else {
+          sessionStore.createMachinerie(sequenceId, formData)
+        }
+        onSuccess()
+      } catch (error) {
+        console.error('Erreur lors de la sauvegarde:', error)
+      } finally {
+        setIsSubmitting(false)
+      }
+    }
+  }, [submitTrigger, formData, machinerie, sequenceId, onSuccess])
 
   return (
     <div className="space-y-6">
@@ -187,24 +212,6 @@ export function MachinerieForm({ sequenceId, machinerie, onCancel, onSuccess }: 
             className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
             placeholder="Notes supplémentaires sur la machinerie..."
           />
-        </div>
-
-        {/* Actions */}
-        <div className="flex gap-2 pt-4">
-          <Button
-            type="submit"
-            disabled={isSubmitting}
-            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
-          >
-            {isSubmitting ? 'Sauvegarde...' : 'Valider'}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onCancel}
-          >
-            Annuler
-          </Button>
         </div>
       </form>
     </div>

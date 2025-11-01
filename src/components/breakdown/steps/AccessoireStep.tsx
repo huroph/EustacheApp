@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Accessoire, Role, sessionStore } from '@/lib/sessionData'
+import { useStepForm } from '@/hooks/useStepForm'
 import AccessoiresList from './accessoires/AccessoiresList'
 import AccessoireForm from './accessoires/AccessoireForm'
 
@@ -11,6 +12,7 @@ export default function AccessoireStep() {
   const [viewMode, setViewMode] = useState<'list' | 'form'>('list')
   const [editingAccessoire, setEditingAccessoire] = useState<Accessoire | null>(null)
   const [roleNames, setRoleNames] = useState<{ [roleId: string]: string }>({})
+  const { enterFormMode, exitFormMode } = useStepForm()
 
   const loadData = () => {
     const currentSequence = sessionStore.getCurrentSequence()
@@ -37,11 +39,39 @@ export default function AccessoireStep() {
   const handleCreateAccessoire = () => {
     setEditingAccessoire(null)
     setViewMode('form')
+    
+    // Utiliser le nouveau système
+    enterFormMode(
+      () => {
+        // Cette fonction sera appelée quand on clique sur "Créer" dans le footer
+        console.log('Submit accessoire form')
+      },
+      () => {
+        // Fonction d'annulation - le contexte gère automatiquement la sortie du mode formulaire
+        setViewMode('list')
+        setEditingAccessoire(null)
+      },
+      'Créer'
+    )
   }
 
   const handleEditAccessoire = (accessoire: Accessoire) => {
     setEditingAccessoire(accessoire)
     setViewMode('form')
+    
+    // Utiliser le nouveau système
+    enterFormMode(
+      () => {
+        // Cette fonction sera appelée quand on clique sur "Modifier" dans le footer
+        console.log('Submit accessoire form')
+      },
+      () => {
+        // Fonction d'annulation - le contexte gère automatiquement la sortie du mode formulaire
+        setViewMode('list')
+        setEditingAccessoire(null)
+      },
+      'Modifier'
+    )
   }
 
   const handleDeleteAccessoire = (accessoireId: string) => {
@@ -67,11 +97,15 @@ export default function AccessoireStep() {
     loadData()
     setViewMode('list')
     setEditingAccessoire(null)
+    
+    // Sortir du mode formulaire
+    exitFormMode()
   }
 
   const handleBackToList = () => {
     setViewMode('list')
     setEditingAccessoire(null)
+    // Le contexte gère automatiquement la sortie du mode formulaire via triggerCancel
   }
 
   return (

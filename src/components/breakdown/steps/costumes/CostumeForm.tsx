@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Costume, Role } from '@/lib/sessionData'
 import Button from '@/components/ui/Button'
 
@@ -9,9 +9,10 @@ interface CostumeFormProps {
   roles: Role[] // Liste des rôles disponibles pour le dropdown
   onSave: (costumeData: Omit<Costume, 'id' | 'createdAt'>) => void
   onCancel: () => void
+  submitTrigger?: number
 }
 
-export default function CostumeForm({ costume, roles, onSave, onCancel }: CostumeFormProps) {
+export default function CostumeForm({ costume, roles, onSave, onCancel, submitTrigger }: CostumeFormProps) {
   const [formData, setFormData] = useState<Omit<Costume, 'id' | 'createdAt'>>({
     nomCostume: '',
     roleId: '',
@@ -46,6 +47,18 @@ export default function CostumeForm({ costume, roles, onSave, onCancel }: Costum
       roleId: formData.roleId || undefined // Convertir string vide en undefined
     })
   }
+
+  // Déclencher le submit quand submitTrigger change
+  const prevSubmitTrigger = useRef(submitTrigger)
+  useEffect(() => {
+    if (submitTrigger && submitTrigger !== prevSubmitTrigger.current) {
+      prevSubmitTrigger.current = submitTrigger
+      onSave({
+        ...formData,
+        roleId: formData.roleId || undefined
+      })
+    }
+  }, [submitTrigger, formData, onSave])
 
   const updateField = (field: keyof typeof formData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -135,15 +148,6 @@ export default function CostumeForm({ costume, roles, onSave, onCancel }: Costum
             placeholder="Médecin urgentiste brillant mais tourmenté par un drame personne"
           />
         </div>
-      </div>
-
-      <div className="flex items-center justify-end space-x-4 pt-4 border-t border-gray-600">
-        <Button variant="outline" onClick={onCancel} type="button">
-          Annuler
-        </Button>
-        <Button type="submit">
-          {costume ? 'Valider' : 'Créer'}
-        </Button>
       </div>
     </form>
   )
