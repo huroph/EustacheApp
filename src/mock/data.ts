@@ -14,12 +14,15 @@ export type Project = {
 export type Sequence = {
   id: string;
   code: string;
-  tags: string[];    // ['EXT','JOUR'] …
   title: string;
-  time: string;      // '1h30'
+  colorId: string;       // 'blue', 'green', 'red', 'purple', 'orange'
+  status: string;        // 'A validé', 'En attente', 'Validé', 'Reporté'
   location?: string;
   summary?: string;
-  roles?: string[];  // ['Acteurs','Equipe','Silhouette']
+  preMintage?: string;   // '00:00' format
+  ett?: string;          // '00:00' format
+  effet?: string;        // 'JOUR', 'NUIT'
+  type?: string;         // 'INT', 'EXT'
 };
 
 export const projects: Project[] = [

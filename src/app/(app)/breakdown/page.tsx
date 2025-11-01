@@ -5,6 +5,7 @@ import { useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCurrentProject } from '@/lib/currentProject'
 import { sequences } from '@/mock/data'
+import { useSidebar } from '@/hooks/useSidebar'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 import CreateSequenceForm from '@/components/breakdown/CreateSequenceForm'
@@ -13,6 +14,7 @@ export default function BreakdownPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { project, isLoading } = useCurrentProject()
+  const { isCollapsed } = useSidebar()
   
   // Mode création basé sur l'URL
   const isCreateMode = searchParams.get('create') === '1'
@@ -47,7 +49,7 @@ export default function BreakdownPage() {
   }
   return (
     <div className="h-full bg-gray-900 p-6 flex flex-col overflow-y-hidden">
-      <div className="max-w-6xl mx-auto w-full flex flex-col h-full overflow-y-hidden">
+      <div className="w-full flex flex-col h-full overflow-y-hidden">
         {/* Header */}
         <div className="flex items-center justify-between mb-8 flex-shrink-0">
           <div className="flex items-center space-x-4">
@@ -63,11 +65,13 @@ export default function BreakdownPage() {
 
         {/* Main content grid */}
         <div className={`grid gap-6 flex-1 min-h-0 overflow-y-hidden ${
-          isCreateMode ? 'grid-cols-1 md:grid-cols-12' : 'grid-cols-1 lg:grid-cols-2'
+          isCreateMode 
+            ? 'grid-cols-1 lg:grid-cols-12'
+            : 'grid-cols-1 lg:grid-cols-2'
         }`}>
           {/* Script viewer (left side) - Scrollable */}
           <div className={`rounded-lg overflow-y-auto ${
-            isCreateMode ? 'md:col-span-7' : ''
+            isCreateMode ? 'lg:col-span-8' : ''
           }`}>
             {isCreateMode ? (
               // Mode création : affichage du PDF
@@ -139,7 +143,7 @@ export default function BreakdownPage() {
 
           {/* Actions panel or Create form (right side) */}
           {isCreateMode ? (
-            <div className="md:col-span-5 overflow-y-hidden">
+            <div className="lg:col-span-4 overflow-y-hidden">
               <CreateSequenceForm onCancel={handleCancel} />
             </div>
           ) : (

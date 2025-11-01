@@ -9,35 +9,33 @@ interface CreateSequenceFormProps {
 
 export default function CreateSequenceForm({ onCancel }: CreateSequenceFormProps) {
   const [formData, setFormData] = useState({
-    code: '',
-    title: '',
-    tags: [] as string[],
-    time: '',
+    code: 'SEQ-1',
+    title: 'Confrontation dans la rue',
+    colorId: 'blue', // Couleur d'identification
+    status: 'A validé',
     location: '',
     summary: '',
-    roles: [] as string[]
+    preMintage: '00:00',
+    ett: '00:00',
+    effet: 'JOUR',
+    type: 'INT'
   })
   const [showSuccess, setShowSuccess] = useState(false)
 
-  const availableTags = ['EXT', 'INT', 'JOUR', 'NUIT']
-  const availableRoles = ['Acteurs', 'Équipe', 'Silhouette']
+  const availableColors = [
+    { id: 'blue', color: 'bg-blue-500', name: 'Bleu' },
+    { id: 'green', color: 'bg-green-500', name: 'Vert' },
+    { id: 'red', color: 'bg-red-500', name: 'Rouge' },
+    { id: 'purple', color: 'bg-purple-500', name: 'Violet' },
+    { id: 'orange', color: 'bg-orange-500', name: 'Orange' }
+  ]
 
-  const handleTagToggle = (tag: string) => {
-    setFormData(prev => ({
-      ...prev,
-      tags: prev.tags.includes(tag) 
-        ? prev.tags.filter(t => t !== tag)
-        : [...prev.tags, tag]
-    }))
-  }
+  const statusOptions = ['A validé', 'En attente', 'Validé', 'Reporté']
+  const effetOptions = ['JOUR', 'NUIT']
+  const typeOptions = ['INT', 'EXT']
 
-  const handleRoleToggle = (role: string) => {
-    setFormData(prev => ({
-      ...prev,
-      roles: prev.roles.includes(role)
-        ? prev.roles.filter(r => r !== role)
-        : [...prev.roles, role]
-    }))
+  const handleColorChange = (colorId: string) => {
+    setFormData(prev => ({ ...prev, colorId }))
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -47,12 +45,26 @@ export default function CreateSequenceForm({ onCancel }: CreateSequenceFormProps
   }
 
   return (
-    <div className="bg-slate-800 p-4 md:p-6 rounded-lg space-y-4 h-full overflow-y-auto">
+    <div className="bg-slate-800 p-4 md:p-6 rounded-lg space-y-6 h-full overflow-y-auto">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-white">Créer une séquence</h2>
+        <h2 className="text-xl font-bold text-white">Nouvelle Séquences</h2>
         <Button variant="secondary" onClick={onCancel}>
-          Annuler
+          ✕
         </Button>
+      </div>
+
+      {/* Section Général */}
+      <div className="space-y-4">
+        <div className="flex items-center space-x-2">
+          <div className="w-6 h-6 bg-orange-500 rounded"></div>
+          <h3 className="text-white font-medium">Général</h3>
+          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+        
+        <p className="text-gray-400 text-sm">Complétez les informations de base de la séquence</p>
+        <div className="w-full h-px bg-blue-500"></div>
       </div>
 
       {showSuccess && (
@@ -61,89 +73,85 @@ export default function CreateSequenceForm({ onCancel }: CreateSequenceFormProps
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Code */}
-        <div>
-          <label htmlFor="code" className="block text-sm font-medium text-gray-300 mb-1">
-            Code *
-          </label>
-          <input
-            id="code"
-            type="text"
-            value={formData.code}
-            onChange={(e) => setFormData(prev => ({ ...prev, code: e.target.value }))}
-            placeholder="SEQ-12"
-            className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          />
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Titre et Code */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="title" className="block text-sm font-medium text-gray-300 mb-1">
+              Titre de la séquence <span className="text-red-400">*</span>
+            </label>
+            <input
+              id="title"
+              type="text"
+              value={formData.title}
+              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+          
+          <div>
+            <label htmlFor="code" className="block text-sm font-medium text-gray-300 mb-1">
+              Numéro de la séquences
+            </label>
+            <input
+              id="code"
+              type="text"
+              value={formData.code}
+              onChange={(e) => setFormData(prev => ({ ...prev, code: e.target.value }))}
+              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
         </div>
 
-        {/* Titre */}
-        <div>
-          <label htmlFor="title" className="block text-sm font-medium text-gray-300 mb-1">
-            Titre *
-          </label>
-          <input
-            id="title"
-            type="text"
-            value={formData.title}
-            onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-            placeholder="Confrontation dans la rue"
-            className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          />
-        </div>
-
-        {/* Tags */}
+        {/* Couleur d'identification */}
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">
-            Tags
+            Couleur d'identification
           </label>
           <div className="flex flex-wrap gap-2">
-            {availableTags.map(tag => (
+            {availableColors.map(color => (
               <button
-                key={tag}
+                key={color.id}
                 type="button"
-                onClick={() => handleTagToggle(tag)}
-                className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-                  formData.tags.includes(tag)
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-slate-700 text-gray-300 hover:bg-slate-600'
+                onClick={() => handleColorChange(color.id)}
+                className={`w-12 h-8 rounded ${color.color} border-2 transition-all ${
+                  formData.colorId === color.id ? 'border-white scale-110' : 'border-transparent hover:border-gray-400'
                 }`}
-                aria-pressed={formData.tags.includes(tag)}
-              >
-                {tag}
-              </button>
+                aria-label={`Couleur ${color.name}`}
+              />
             ))}
           </div>
         </div>
 
-        {/* Durée */}
+        {/* Statut */}
         <div>
-          <label htmlFor="time" className="block text-sm font-medium text-gray-300 mb-1">
-            Durée / Time
+          <label htmlFor="status" className="block text-sm font-medium text-gray-300 mb-1">
+            statut de la séquence
           </label>
-          <input
-            id="time"
-            type="text"
-            value={formData.time}
-            onChange={(e) => setFormData(prev => ({ ...prev, time: e.target.value }))}
-            placeholder="1h30"
-            className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          <select
+            id="status"
+            value={formData.status}
+            onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
+            className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            {statusOptions.map(status => (
+              <option key={status} value={status}>{status}</option>
+            ))}
+          </select>
         </div>
 
-        {/* Lieu */}
+        {/* Lieu de tournage */}
         <div>
           <label htmlFor="location" className="block text-sm font-medium text-gray-300 mb-1">
-            Lieu
+            Lieu de tournage
           </label>
           <input
             id="location"
             type="text"
             value={formData.location}
             onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-            placeholder="Rue piétonne animée"
+            placeholder="Adresse ou nom du lieu..."
             className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
@@ -157,39 +165,84 @@ export default function CreateSequenceForm({ onCancel }: CreateSequenceFormProps
             id="summary"
             value={formData.summary}
             onChange={(e) => setFormData(prev => ({ ...prev, summary: e.target.value }))}
-            placeholder="Description courte de la séquence..."
+            placeholder="Description de la scène..."
             rows={3}
             className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
           />
         </div>
 
-        {/* Équipe / Rôles */}
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            Équipe / Rôles
-          </label>
-          <div className="space-y-2">
-            {availableRoles.map(role => (
-              <label key={role} className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.roles.includes(role)}
-                  onChange={() => handleRoleToggle(role)}
-                  className="w-4 h-4 text-blue-600 bg-slate-700 border-slate-600 rounded focus:ring-blue-500 focus:ring-2"
-                />
-                <span className="text-gray-300 text-sm">{role}</span>
-              </label>
-            ))}
+        {/* Timing */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div>
+            <label htmlFor="preMintage" className="block text-sm font-medium text-gray-300 mb-1">
+              Pré-minutage (mm:ss)
+            </label>
+            <input
+              id="preMintage"
+              type="text"
+              value={formData.preMintage}
+              onChange={(e) => setFormData(prev => ({ ...prev, preMintage: e.target.value }))}
+              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          
+          <div>
+            <label htmlFor="ett" className="block text-sm font-medium text-gray-300 mb-1">
+              E.T.T. (hh:mm)
+            </label>
+            <input
+              id="ett"
+              type="text"
+              value={formData.ett}
+              onChange={(e) => setFormData(prev => ({ ...prev, ett: e.target.value }))}
+              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          
+          <div>
+            <label htmlFor="effet" className="block text-sm font-medium text-gray-300 mb-1">
+              Effet
+            </label>
+            <select
+              id="effet"
+              value={formData.effet}
+              onChange={(e) => setFormData(prev => ({ ...prev, effet: e.target.value }))}
+              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {effetOptions.map(effet => (
+                <option key={effet} value={effet}>{effet}</option>
+              ))}
+            </select>
+          </div>
+          
+          <div>
+            <label htmlFor="type" className="block text-sm font-medium text-gray-300 mb-1">
+              I/E
+            </label>
+            <select
+              id="type"
+              value={formData.type}
+              onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
+              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {typeOptions.map(type => (
+                <option key={type} value={type}>{type}</option>
+              ))}
+            </select>
           </div>
         </div>
 
-        {/* Boutons */}
-        <div className="flex space-x-3 pt-4">
-          <Button type="submit" variant="default" className="flex-1">
-            Enregistrer (mock)
-          </Button>
-          <Button type="button" variant="secondary" onClick={onCancel}>
-            Annuler
+        {/* Navigation */}
+        <div className="flex items-center justify-between pt-6 border-t border-slate-600">
+          <div className="flex items-center space-x-4">
+            <Button type="button" variant="secondary" onClick={onCancel}>
+              Précédent
+            </Button>
+            <span className="text-gray-400 text-sm">1 of 3</span>
+          </div>
+          
+          <Button type="submit" variant="default">
+            Suivant
           </Button>
         </div>
       </form>

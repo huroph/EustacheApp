@@ -44,9 +44,11 @@ export default function AppShell({ children }: AppShellProps) {
         <main
           className={cn(
             'flex-1 transition-all duration-300 overflow-hidden',
-            'md:ml-64', // Marge sidebar étendue par défaut
-            isCollapsed && 'md:ml-16' // Marge sidebar réduite
+            isCollapsed ? 'md:ml-16' : 'md:ml-64' // Marge ajustée selon l'état
           )}
+          style={{
+            width: `calc(100vw - ${isCollapsed ? '4rem' : '16rem'})`
+          }}
         >
           <div className="h-full w-full overflow-hidden">
             {children}
