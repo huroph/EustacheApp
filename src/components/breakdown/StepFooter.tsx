@@ -27,6 +27,11 @@ export default function StepFooter({ currentIndex, total, onPrev, onNext, onSubm
     title: currentSequence.title
   } : null
 
+  // Informations globales
+  const globalStats = {
+    equipesTechniquesCount: sessionStore.getEquipesTechniques().length
+  }
+
   return (
     <div className="space-y-3">
       {/* Informations de la séquence */}
@@ -43,6 +48,7 @@ export default function StepFooter({ currentIndex, total, onPrev, onNext, onSubm
             <span>{sequenceStats.costumesCount} costume(s)</span>
             <span>{sequenceStats.accessoiresCount} accessoire(s)</span>
             <span>{sequenceStats.effetsSpeciauxCount} effet(s) spéciaux</span>
+            <span>{globalStats.equipesTechniquesCount} équipe(s) technique(s)</span>
           </div>
         </div>
       )}

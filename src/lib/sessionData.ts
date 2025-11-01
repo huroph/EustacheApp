@@ -65,8 +65,18 @@ export interface Accessoire {
 export interface EffetSpecial {
   id: string
   nom: string
-  statut: 'A validé' | 'En attente' | 'Validé' | 'Reporté'
+  statut: 'En attente' | 'A validé' | 'Validé' | 'Reporté'
   description: string
+  createdAt: Date
+}
+
+export interface EquipeTechnique {
+  id: string
+  nom: string
+  prenom: string
+  type: 'Ingénieur son' | 'Opérateur confirmé' | 'Assistant' | 'Technicien' | 'Superviseur'
+  sequences: string[] // IDs des séquences assignées
+  notes: string
   createdAt: Date
 }
 
@@ -94,6 +104,7 @@ class SessionDataStore {
   private costumes: Record<string, Costume[]> = {} // sequenceId -> Costume[]
   private accessoires: Record<string, Accessoire[]> = {} // sequenceId -> Accessoire[]
   private effetsSpeciaux: Record<string, EffetSpecial[]> = {} // sequenceId -> EffetSpecial[]
+  private equipesTechniques: EquipeTechnique[] = [] // Global, pas par séquence
   private currentSequenceId: string | null = null
   private listeners: Set<() => void> = new Set()
 
@@ -225,6 +236,27 @@ class SessionDataStore {
         createdAt: new Date()
       }
     ]
+
+    this.equipesTechniques = [
+      {
+        id: 'equipe-1',
+        nom: 'Rodriguez',
+        prenom: 'Paul',
+        type: 'Ingénieur son',
+        sequences: ['seq-1'], // Assigné à la séquence par défaut
+        notes: '',
+        createdAt: new Date()
+      },
+      {
+        id: 'equipe-2',
+        nom: 'Frenin',
+        prenom: 'Jacob',
+        type: 'Opérateur confirmé',
+        sequences: ['seq-1'],
+        notes: '',
+        createdAt: new Date()
+      }
+    ]
   }
 
   // Persist in sessionStorage
@@ -238,6 +270,7 @@ class SessionDataStore {
         costumes: this.costumes,
         accessoires: this.accessoires,
         effetsSpeciaux: this.effetsSpeciaux,
+        equipesTechniques: this.equipesTechniques,
         currentSequenceId: this.currentSequenceId
       }
       if (typeof window !== 'undefined' && window.sessionStorage) {
@@ -336,6 +369,16 @@ class SessionDataStore {
             updatedAt: new Date(s.updatedAt)
           }
         })
+
+        // Load équipes techniques (global)
+        if (parsed.equipesTechniques && Array.isArray(parsed.equipesTechniques)) {
+          this.equipesTechniques = parsed.equipesTechniques.map((e: any) => ({ 
+            ...e, 
+            createdAt: new Date(e.createdAt) 
+          }))
+        } else {
+          this.equipesTechniques = []
+        }
 
         // ensure decors/scenes/roles/costumes/accessoires/effetsSpeciaux maps exist for each sequence
         this.sequences.forEach((seq) => {
@@ -750,6 +793,46 @@ class SessionDataStore {
     if (index === -1) return false
     
     this.effetsSpeciaux[sequenceId].splice(index, 1)
+    this.save()
+    return true
+  }
+
+  // CRUD methods for EquipesTechniques (global, not per sequence)
+  createEquipeTechnique(equipeDataWithoutId: Omit<EquipeTechnique, 'id' | 'createdAt'>): EquipeTechnique {
+    const equipe: EquipeTechnique = {
+      id: `equipe-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      ...equipeDataWithoutId,
+      createdAt: new Date()
+    }
+    
+    this.equipesTechniques.push(equipe)
+    this.save()
+    return equipe
+  }
+
+  getEquipesTechniques(): EquipeTechnique[] {
+    return this.equipesTechniques
+  }
+
+  getEquipeTechnique(equipeId: string): EquipeTechnique | null {
+    return this.equipesTechniques.find(e => e.id === equipeId) || null
+  }
+
+  updateEquipeTechnique(equipeId: string, updates: Partial<Omit<EquipeTechnique, 'id' | 'createdAt'>>): EquipeTechnique | null {
+    const index = this.equipesTechniques.findIndex(e => e.id === equipeId)
+    if (index === -1) return null
+    
+    const updated = { ...this.equipesTechniques[index], ...updates }
+    this.equipesTechniques[index] = updated
+    this.save()
+    return updated
+  }
+
+  deleteEquipeTechnique(equipeId: string): boolean {
+    const index = this.equipesTechniques.findIndex(e => e.id === equipeId)
+    if (index === -1) return false
+    
+    this.equipesTechniques.splice(index, 1)
     this.save()
     return true
   }
