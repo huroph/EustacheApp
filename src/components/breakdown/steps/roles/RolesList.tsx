@@ -5,8 +5,6 @@ import Button from '@/components/ui/Button'
 
 interface RolesListProps {
   roles: Role[]
-  selectedRole: Role | null
-  onSelectRole: (role: Role) => void
   onCreateRole: () => void
   onEditRole: (role: Role) => void
   onDeleteRole: (roleId: string) => void
@@ -14,8 +12,6 @@ interface RolesListProps {
 
 export default function RolesList({
   roles,
-  selectedRole,
-  onSelectRole,
   onCreateRole,
   onEditRole,
   onDeleteRole
@@ -43,12 +39,7 @@ export default function RolesList({
           {roles.map((role) => (
             <div
               key={role.id}
-              className={`p-4 rounded-lg border cursor-pointer transition-colors ${
-                selectedRole?.id === role.id
-                  ? 'border-blue-500 bg-blue-500/10'
-                  : 'border-gray-600 bg-gray-800 hover:border-gray-500'
-              }`}
-              onClick={() => onSelectRole(role)}
+              className="p-4 rounded-lg border border-gray-600 bg-gray-800 hover:border-gray-500 transition-colors"
             >
               <div className="flex items-center justify-between">
                 <div className="flex-1">
@@ -69,10 +60,7 @@ export default function RolesList({
                 </div>
                 <div className="flex items-center space-x-2">
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onEditRole(role)
-                    }}
+                    onClick={() => onEditRole(role)}
                     className="text-gray-400 hover:text-white transition-colors"
                     title="Modifier"
                   >
@@ -81,8 +69,7 @@ export default function RolesList({
                     </svg>
                   </button>
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation()
+                    onClick={() => {
                       if (confirm('Êtes-vous sûr de vouloir supprimer ce rôle ?')) {
                         onDeleteRole(role.id)
                       }

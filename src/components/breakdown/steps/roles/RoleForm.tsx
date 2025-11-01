@@ -8,10 +8,9 @@ interface RoleFormProps {
   role?: Role | null
   onSave: (roleData: Omit<Role, 'id' | 'createdAt'>) => void
   onCancel: () => void
-  isVisible: boolean
 }
 
-export default function RoleForm({ role, onSave, onCancel, isVisible }: RoleFormProps) {
+export default function RoleForm({ role, onSave, onCancel }: RoleFormProps) {
   const [formData, setFormData] = useState<Omit<Role, 'id' | 'createdAt'>>({
     type: 'Principale',
     nomRole: '',
@@ -91,15 +90,6 @@ export default function RoleForm({ role, onSave, onCancel, isVisible }: RoleForm
 
   const updateField = (field: keyof typeof formData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
-  }
-
-  if (!isVisible) {
-    return (
-      <div className="text-center py-12 text-gray-400">
-        <div className="text-4xl mb-4">👤</div>
-        <p>Sélectionnez un rôle pour le modifier ou créez-en un nouveau</p>
-      </div>
-    )
   }
 
   return (

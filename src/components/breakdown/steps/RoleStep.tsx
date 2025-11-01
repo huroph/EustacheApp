@@ -7,8 +7,7 @@ import RoleForm from './roles/RoleForm'
 
 export default function RoleStep() {
   const [roles, setRoles] = useState<Role[]>([])
-  const [selectedRole, setSelectedRole] = useState<Role | null>(null)
-  const [showForm, setShowForm] = useState(false)
+  const [viewMode, setViewMode] = useState<'list' | 'form'>('list')
   const [editingRole, setEditingRole] = useState<Role | null>(null)
 
   const loadData = () => {
@@ -16,11 +15,6 @@ export default function RoleStep() {
     if (currentSequence) {
       const sequenceRoles = sessionStore.getRoles(currentSequence.id)
       setRoles(sequenceRoles)
-      
-      // Si on a des rôles et aucun n'est sélectionné, sélectionner le premier
-      if (sequenceRoles.length > 0 && !selectedRole) {
-        setSelectedRole(sequenceRoles[0])
-      }
     }
   }
 
@@ -30,12 +24,12 @@ export default function RoleStep() {
 
   const handleCreateRole = () => {
     setEditingRole(null)
-    setShowForm(true)
+    setViewMode('form')
   }
 
   const handleEditRole = (role: Role) => {
     setEditingRole(role)
-    setShowForm(true)
+    setViewMode('form')
   }
 
   const handleDeleteRole = (roleId: string) => {
@@ -44,11 +38,6 @@ export default function RoleStep() {
 
     sessionStore.deleteRole(currentSequence.id, roleId)
     loadData()
-    
-    // Si le rôle supprimé était sélectionné, désélectionner
-    if (selectedRole?.id === roleId) {
-      setSelectedRole(null)
-    }
   }
 
   const handleSaveRole = (roleData: Omit<Role, 'id' | 'createdAt'>) => {
@@ -64,12 +53,12 @@ export default function RoleStep() {
     }
 
     loadData()
-    setShowForm(false)
+    setViewMode('list')
     setEditingRole(null)
   }
 
-  const handleCancelForm = () => {
-    setShowForm(false)
+  const handleBackToList = () => {
+    setViewMode('list')
     setEditingRole(null)
   }
 
@@ -80,29 +69,20 @@ export default function RoleStep() {
         <div className="w-full h-px bg-blue-500"></div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Liste des rôles (gauche) */}
-        <div className="space-y-4">
-          <RolesList
-            roles={roles}
-            selectedRole={selectedRole}
-            onSelectRole={setSelectedRole}
-            onCreateRole={handleCreateRole}
-            onEditRole={handleEditRole}
-            onDeleteRole={handleDeleteRole}
-          />
-        </div>
-
-        {/* Formulaire de création/édition (droite) */}
-        <div className="space-y-4">
-          <RoleForm
-            role={editingRole}
-            onSave={handleSaveRole}
-            onCancel={handleCancelForm}
-            isVisible={showForm}
-          />
-        </div>
-      </div>
+      {viewMode === 'list' ? (
+        <RolesList
+          roles={roles}
+          onCreateRole={handleCreateRole}
+          onEditRole={handleEditRole}
+          onDeleteRole={handleDeleteRole}
+        />
+      ) : (
+        <RoleForm
+          role={editingRole}
+          onSave={handleSaveRole}
+          onCancel={handleBackToList}
+        />
+      )}
     </div>
   )
 }
