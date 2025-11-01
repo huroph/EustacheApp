@@ -2,6 +2,6 @@
 import { redirect } from 'next/navigation'
 
 export default function HomePage() {
-  // Redirection automatique vers le dashboard
-  redirect('/dashboard')
+  // Redirection automatique vers les projets
+  redirect('/projects')
 }

@@ -1,11 +1,12 @@
 // src/components/layout/Sidebar.tsx
 'use client'
 
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { LayoutDashboard, BarChart2, X, FolderOpen, FileText, Film } from 'lucide-react'
+import { FileText, Film, Calendar, FolderOpen } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import Button from '@/components/ui/Button'
+import { useCurrentProject } from '@/lib/currentProject'
 
 interface SidebarProps {
   isCollapsed: boolean
@@ -14,21 +15,6 @@ interface SidebarProps {
 }
 
 const navigation = [
-  {
-    name: 'Dashboard',
-    href: '/dashboard',
-    icon: LayoutDashboard,
-  },
-  {
-    name: 'Analytics',
-    href: '/analytics',
-    icon: BarChart2,
-  },
-  {
-    name: 'Projects',
-    href: '/projects',
-    icon: FolderOpen,
-  },
   {
     name: 'Dépouillement',
     href: '/breakdown',
@@ -39,10 +25,21 @@ const navigation = [
     href: '/sequences',
     icon: Film,
   },
+  {
+    name: 'Planning',
+    href: '/planning',
+    icon: Calendar,
+  },
 ]
 
 export default function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: SidebarProps) {
   const pathname = usePathname()
+  const router = useRouter()
+  const { project } = useCurrentProject()
+
+  const handleProjectClick = () => {
+    router.push('/projects')
+  }
 
   const SidebarContent = () => (
     <div className="flex h-full flex-col">
@@ -51,16 +48,19 @@ export default function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: Si
         {navigation.map((item) => {
           const isActive = pathname === item.href
           const Icon = item.icon
+          const isDisabled = !project
 
           return (
             <Link
               key={item.name}
-              href={item.href}
+              href={isDisabled ? '/projects' : item.href}
               onClick={onCloseMobile}
               className={cn(
                 'group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors',
                 'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
-                isActive
+                isDisabled 
+                  ? 'text-gray-500 cursor-not-allowed'
+                  : isActive
                   ? 'bg-gray-800 text-white'
                   : 'text-gray-300 hover:bg-gray-800 hover:text-white',
                 isCollapsed && 'justify-center'
@@ -70,7 +70,11 @@ export default function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: Si
               <Icon
                 className={cn(
                   'flex-shrink-0',
-                  isActive ? 'text-white' : 'text-gray-400 group-hover:text-white',
+                  isDisabled
+                    ? 'text-gray-500'
+                    : isActive 
+                    ? 'text-white' 
+                    : 'text-gray-400 group-hover:text-white',
                   isCollapsed ? 'h-6 w-6' : 'mr-3 h-5 w-5'
                 )}
               />
@@ -81,6 +85,46 @@ export default function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: Si
           )
         })}
       </nav>
+
+      {/* Section bas de sidebar - Projet sélectionné */}
+      <div className="border-t border-gray-800 p-4">
+        {project ? (
+          <div
+            onClick={handleProjectClick}
+            className="cursor-pointer hover:bg-gray-800 rounded-md p-3 transition-colors"
+          >
+            {!isCollapsed && (
+              <div className="space-y-2">
+                <div className="text-xs text-gray-400 uppercase tracking-wide">
+                  Projet sélectionné
+                </div>
+                <div className="text-sm font-medium text-white truncate">
+                  {project.title}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className={cn('space-y-2', isCollapsed && 'items-center')}>
+            {!isCollapsed && (
+              <div className="text-xs text-gray-400 uppercase tracking-wide mb-2">
+                Aucun projet
+              </div>
+            )}
+          </div>
+        )}
+        
+        <Button
+          onClick={handleProjectClick}
+          className={cn(
+            'w-full mt-3 bg-gray-700 hover:bg-gray-600 text-white text-sm',
+            isCollapsed && 'px-2'
+          )}
+        >
+          <FolderOpen className={cn('h-4 w-4', !isCollapsed && 'mr-2')} />
+          {!isCollapsed && 'Changer de projet'}
+        </Button>
+      </div>
     </div>
   )
 

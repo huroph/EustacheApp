@@ -1,31 +1,55 @@
 // src/mock/data.ts
-export const projects = [
+export type Project = {
+  id: string;
+  title: string;
+  scriptFile: string;
+  startDate: string;
+  endDate: string;
+  year: number;
+  sequencesCount?: number;
+  coverUrl?: string;
+}
+
+export const projects: Project[] = [
   {
-    id: 'p-2026-1',
+    id: 'prj_01',
+    title: 'Le gang des amazones',
+    scriptFile: 'Scenario.pdf',
+    startDate: '2026-03-15',
+    endDate: '2026-05-20',
     year: 2026,
-    title: 'Le gang des amazone',
-    pdf: 'Scenrario.pdf',
-    dates: '15 oct. 2025 → 15 oct. 2025',
-    badge: 'Propriétaire',
-    imageAlt: 'Le gang des amazone',
+    sequencesCount: 32,
+    coverUrl: undefined,
   },
   {
-    id: 'p-2026-2',
+    id: 'prj_02',
+    title: 'Les mystères de la forêt',
+    scriptFile: 'Scenario.pdf',
+    startDate: '2026-01-10',
+    endDate: '2026-02-28',
     year: 2026,
-    title: 'Le gang des amazone',
-    pdf: 'Scenrario.pdf',
-    dates: '15 oct. 2025 → 15 oct. 2025',
-    badge: 'Propriétaire',
-    imageAlt: 'Le gang des amazone',
+    sequencesCount: 28,
+    coverUrl: undefined,
   },
   {
-    id: 'p-2025-1',
+    id: 'prj_a1b2c3',
+    title: 'Retour vers le futur moderne',
+    scriptFile: 'Scenario.pdf',
+    startDate: '2025-11-01',
+    endDate: '2025-12-15',
     year: 2025,
-    title: 'Le gang des amazone',
-    pdf: 'Scenrario.pdf',
-    dates: '15 oct. 2025 → 15 oct. 2025',
-    badge: 'Propriétaire',
-    imageAlt: 'Le gang des amazone',
+    sequencesCount: 24,
+    coverUrl: undefined,
+  },
+  {
+    id: 'prj_xyz789',
+    title: 'La dernière mission',
+    scriptFile: 'Scenario.pdf',
+    startDate: '2025-09-01',
+    endDate: '2025-10-30',
+    year: 2025,
+    sequencesCount: 18,
+    coverUrl: undefined,
   },
 ]
 

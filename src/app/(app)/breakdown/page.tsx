@@ -1,15 +1,33 @@
 // src/app/(app)/breakdown/page.tsx
-import type { Metadata } from 'next'
-import { breakdown } from '@/mock/data'
+'use client'
+
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useCurrentProject } from '@/lib/currentProject'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 
-export const metadata: Metadata = {
-  title: 'Dépouillement | EustacheApp',
-  description: 'Vue dépouillement avec script visible',
-}
-
 export default function BreakdownPage() {
+  const router = useRouter()
+  const { project, isLoading } = useCurrentProject()
+
+  useEffect(() => {
+    if (!isLoading && !project) {
+      router.push('/projects')
+    }
+  }, [project, isLoading, router])
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-900 p-6 flex items-center justify-center">
+        <div className="text-white">Chargement...</div>
+      </div>
+    )
+  }
+
+  if (!project) {
+    return null
+  }
   return (
     <div className="min-h-screen bg-gray-900 p-6">
       <div className="max-w-6xl mx-auto">
@@ -18,11 +36,11 @@ export default function BreakdownPage() {
           <div className="flex items-center space-x-4">
             <Badge>👑</Badge>
             <h1 className="text-2xl font-bold text-white">Dépouillement</h1>
-            <span className="text-gray-400">{breakdown.projectTitle}</span>
+            <span className="text-gray-400">{project.title}</span>
           </div>
           
           <div className="flex items-center space-x-4">
-            <span className="text-gray-400">{breakdown.pages}</span>
+            <span className="text-gray-400">1 / 8</span>
           </div>
         </div>
 
@@ -78,8 +96,8 @@ export default function BreakdownPage() {
                 + Créer une séquence
               </Button>
               
-              <p className="text-gray-400 text-sm">
-                {breakdown.sequencesCountText}
+              <p className="text-gray-400 mb-6">
+                {project.sequencesCount || 14} séquences créées — voir la liste
               </p>
             </div>
 

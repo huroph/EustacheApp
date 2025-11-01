@@ -1,15 +1,69 @@
 // src/app/(app)/sequences/page.tsx
 'use client'
 
-import type { Metadata } from 'next'
-import { useState } from 'react'
-import { sequences } from '@/mock/data'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useCurrentProject } from '@/lib/currentProject'
 import SequenceCard from '@/components/sequences/SequenceCard'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 
+// Mock sequences data
+const sequences = [
+  {
+    id: 'seq-1',
+    code: 'SEQ-1',
+    tags: ['EXT', 'JOUR'],
+    title: 'Confrontation dans le manoir',
+    time: '1h30',
+    summary:
+      "Une rue commerçante. Passants, vélos, poussettes. Un MIMÉE (mime) statue vivante. Un CHIEN renifle une borne de parking. Des panneaux incompréhensibles...",
+    roles: ['Acteurs', 'Equipe', 'Silhouette'],
+  },
+  {
+    id: 'seq-2',
+    code: 'SEQ-2',
+    tags: ['INT', 'NUIT'],
+    title: 'Discussion secrète',
+    time: '45min',
+    summary:
+      "Dans un bureau sombre, deux personnages se rencontrent pour échanger des informations cruciales. L'atmosphère est tendue...",
+    roles: ['Acteurs', 'Equipe'],
+  },
+  {
+    id: 'seq-3',
+    code: 'SEQ-3',
+    tags: ['EXT', 'NUIT'],
+    title: 'Poursuite nocturne',
+    time: '2h15',
+    summary:
+      "Une course-poursuite effrénée dans les rues de la ville. Voitures, motos, et action pure...",
+    roles: ['Acteurs', 'Equipe', 'Cascadeurs', 'Silhouette'],
+  },
+]
+
 export default function SequencesPage() {
+  const router = useRouter()
+  const { project, isLoading } = useCurrentProject()
   const [selectedSequence, setSelectedSequence] = useState(sequences[0])
+
+  useEffect(() => {
+    if (!isLoading && !project) {
+      router.push('/projects')
+    }
+  }, [project, isLoading, router])
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-900 p-6 flex items-center justify-center">
+        <div className="text-white">Chargement...</div>
+      </div>
+    )
+  }
+
+  if (!project) {
+    return null
+  }
 
   return (
     <div className="min-h-screen bg-gray-900 p-6">
@@ -19,7 +73,7 @@ export default function SequencesPage() {
           <div className="flex items-center space-x-4">
             <Badge>👑</Badge>
             <h1 className="text-2xl font-bold text-white">Séquences</h1>
-            <span className="text-gray-400">Le gang des amazone</span>
+            <span className="text-gray-400">{project.title}</span>
           </div>
         </div>
 
