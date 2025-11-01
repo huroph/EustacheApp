@@ -51,24 +51,24 @@ export default function BreakdownPage() {
         {/* Main content grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 flex-1 min-h-0 overflow-y-hidden">
           {/* Script viewer (left side) - Scrollable */}
-          <div className="bg-white rounded-lg p-6 overflow-y-auto shadow-lg">
+          <div className="bg-white rounded-lg p-6 overflow-y-auto shadow-lg border border-gray-200">
             <div className="space-y-4 text-sm">
-              <div className="font-bold text-center text-xl mb-6 text-gray-900 border-b border-gray-200 pb-3">{project.title.toUpperCase()}</div>
+              <div className="font-bold text-center text-xl mb-6 text-gray-900 border-b border-gray-200 pb-3" style={{color: '#111827'}}>{project.title.toUpperCase()}</div>
               
               <div className="space-y-3 bg-gray-50 p-4 rounded-lg">
-                <p className="text-gray-800"><strong className="text-gray-900">Script :</strong> <span className="text-blue-700">{project.scriptFile}</span></p>
-                <p className="text-gray-800"><strong className="text-gray-900">Période de tournage :</strong> <span className="text-gray-700">{new Date(project.startDate).toLocaleDateString('fr-FR')} → {new Date(project.endDate).toLocaleDateString('fr-FR')}</span></p>
-                <p className="text-gray-800"><strong className="text-gray-900">Année :</strong> <span className="text-gray-700">{project.year}</span></p>
-                <p className="text-gray-800"><strong className="text-gray-900">Séquences créées :</strong> <span className="text-green-700 font-semibold">{projectSequences.length}</span></p>
+                <p className="text-gray-800" style={{color: '#1f2937'}}><strong className="text-gray-900" style={{color: '#111827'}}>Script :</strong> <span className="text-blue-700" style={{color: '#1d4ed8'}}>{project.scriptFile}</span></p>
+                <p className="text-gray-800" style={{color: '#1f2937'}}><strong className="text-gray-900" style={{color: '#111827'}}>Période de tournage :</strong> <span className="text-gray-700" style={{color: '#374151'}}>{new Date(project.startDate).toLocaleDateString('fr-FR')} → {new Date(project.endDate).toLocaleDateString('fr-FR')}</span></p>
+                <p className="text-gray-800" style={{color: '#1f2937'}}><strong className="text-gray-900" style={{color: '#111827'}}>Année :</strong> <span className="text-gray-700" style={{color: '#374151'}}>{project.year}</span></p>
+                <p className="text-gray-800" style={{color: '#1f2937'}}><strong className="text-gray-900" style={{color: '#111827'}}>Séquences créées :</strong> <span className="text-green-700 font-semibold" style={{color: '#15803d'}}>{projectSequences.length}</span></p>
               </div>
 
               <div className="border-t border-gray-300 pt-4 mt-6">
-                <h3 className="font-bold text-gray-900 text-base mb-4">INFORMATIONS PROJET</h3>
+                <h3 className="font-bold text-gray-900 text-base mb-4" style={{color: '#111827'}}>INFORMATIONS PROJET</h3>
                 
                 <div className="mt-4 space-y-4">
                   <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
-                    <p className="font-semibold text-blue-900 mb-2">📋 Statut : En préparation</p>
-                    <p className="text-blue-800 text-sm leading-relaxed">
+                    <p className="font-semibold text-blue-900 mb-2" style={{color: '#1e3a8a'}}>📋 Statut : En préparation</p>
+                    <p className="text-blue-800 text-sm leading-relaxed" style={{color: '#1e40af'}}>
                       Projet en cours d'analyse. Le dépouillement du script permettra d'identifier 
                       toutes les séquences et leurs besoins techniques.
                     </p>
@@ -76,26 +76,26 @@ export default function BreakdownPage() {
 
                   {projectSequences.length > 0 && (
                     <div className="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
-                      <p className="font-semibold text-green-900 mb-2">🎬 Séquences identifiées :</p>
+                      <p className="font-semibold text-green-900 mb-2" style={{color: '#14532d'}}>🎬 Séquences identifiées :</p>
                       <ul className="text-sm text-green-800 mt-2 space-y-1">
                         {projectSequences.slice(0, 3).map((seq) => (
-                          <li key={seq.id} className="text-green-800">
-                            • <span className="font-medium text-green-900">{seq.code}</span> - <span className="text-green-700">{seq.title}</span>
+                          <li key={seq.id} className="text-green-800" style={{color: '#166534'}}>
+                            • <span className="font-medium text-green-900" style={{color: '#14532d'}}>{seq.code}</span> - <span className="text-green-700" style={{color: '#15803d'}}>{seq.title}</span>
                           </li>
                         ))}
                         {projectSequences.length > 3 && (
-                          <li className="text-green-600 italic">... et {projectSequences.length - 3} autres séquences</li>
+                          <li className="text-green-600 italic" style={{color: '#16a34a'}}>... et {projectSequences.length - 3} autres séquences</li>
                         )}
                       </ul>
                     </div>
                   )}
 
                   <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r-lg">
-                    <p className="font-semibold text-amber-900 mb-2">⏭️ Prochaines étapes :</p>
+                    <p className="font-semibold text-amber-900 mb-2" style={{color: '#78350f'}}>⏭️ Prochaines étapes :</p>
                     <ul className="text-sm text-amber-800 mt-2 space-y-1">
-                      <li className="text-amber-800">• Finaliser l'analyse du script</li>
-                      <li className="text-amber-800">• Valider toutes les séquences</li>
-                      <li className="text-amber-800">• Établir le planning de tournage</li>
+                      <li className="text-amber-800" style={{color: '#92400e'}}>• Finaliser l'analyse du script</li>
+                      <li className="text-amber-800" style={{color: '#92400e'}}>• Valider toutes les séquences</li>
+                      <li className="text-amber-800" style={{color: '#92400e'}}>• Établir le planning de tournage</li>
                     </ul>
                   </div>
                 </div>

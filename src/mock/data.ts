@@ -85,6 +85,35 @@ export const sequences = {
       summary:
         "Zone d’essai isolée, dispositif activé, explosion lumineuse, réaction du personnel scientifique.",
       roles: ["Acteurs", "Equipe", "Silhouette"]
+    },{
+      id: "seq-a4",
+      code: "SEQ-A4",
+      tags: ["EXT", "JOUR"],
+      title: "Test du dispositif Aurora",
+      time: "3h00",
+      summary:
+        "Zone d’essai isolée, dispositif activé, explosion lumineuse, réaction du personnel scientifique.",
+      roles: ["Acteurs", "Equipe", "Silhouette"]
+    },
+    {
+      id: "seq-a5",
+      code: "SEQ-A5",
+      tags: ["EXT", "JOUR"],
+      title: "Test du dispositif Aurora",
+      time: "3h00",
+      summary:
+        "Zone d’essai isolée, dispositif activé, explosion lumineuse, réaction du personnel scientifique.",
+      roles: ["Acteurs", "Equipe", "Silhouette"]
+    },
+    {
+      id: "seq-a6",
+      code: "SEQ-A6",
+      tags: ["EXT", "JOUR"],
+      title: "Test du dispositif Aurora",
+      time: "3h00",
+      summary:
+        "Zone d’essai isolée, dispositif activé, explosion lumineuse, réaction du personnel scientifique.",
+      roles: ["Acteurs", "Equipe", "Silhouette"]
     }
   ],
 

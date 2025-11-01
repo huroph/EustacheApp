@@ -25,14 +25,14 @@ export default function AppShell({ children }: AppShellProps) {
   }
 
   return (
-    <div className="h-screen bg-gray-900 overflow-y-hidden flex flex-col">
+    <div className="h-screen bg-gray-900 overflow-hidden flex flex-col">
       {/* Header */}
       <Header 
         onToggleSidebar={handleToggle}
         sidebarCollapsed={isCollapsed}
       />
 
-      <div className="flex flex-1 min-h-0 overflow-y-hidden">
+      <div className="flex flex-1 min-h-0 overflow-hidden">
         {/* Sidebar */}
         <Sidebar 
           isCollapsed={isCollapsed}
@@ -43,12 +43,12 @@ export default function AppShell({ children }: AppShellProps) {
         {/* Contenu principal */}
         <main
           className={cn(
-            'flex-1 transition-all duration-300 overflow-y-hidden',
+            'flex-1 transition-all duration-300 overflow-hidden',
             'md:ml-64', // Marge sidebar étendue par défaut
             isCollapsed && 'md:ml-16' // Marge sidebar réduite
           )}
         >
-          <div className="h-full overflow-y-hidden">
+          <div className="h-full w-full overflow-hidden">
             {children}
           </div>
         </main>
