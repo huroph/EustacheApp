@@ -44,6 +44,24 @@ export interface Role {
   createdAt: Date
 }
 
+export interface Costume {
+  id: string
+  nomCostume: string
+  roleId?: string // Assigné à un rôle (optionnel)
+  statut: 'A validé' | 'En attente' | 'Validé' | 'Reporté'
+  notesCostume: string
+  createdAt: Date
+}
+
+export interface Accessoire {
+  id: string
+  nomAccessoire: string
+  roleId?: string // Assigné à un rôle (optionnel)
+  statut: 'A validé' | 'En attente' | 'Validé' | 'Reporté'
+  notesAccessoire: string
+  createdAt: Date
+}
+
 export interface SequenceFormData {
   id: string
   code: string
@@ -65,6 +83,8 @@ class SessionDataStore {
   private decors: Record<string, Decor[]> = {} // sequenceId -> Decor[]
   private scenes: Record<string, Scene[]> = {} // sequenceId -> Scene[]
   private roles: Record<string, Role[]> = {} // sequenceId -> Role[]
+  private costumes: Record<string, Costume[]> = {} // sequenceId -> Costume[]
+  private accessoires: Record<string, Accessoire[]> = {} // sequenceId -> Accessoire[]
   private currentSequenceId: string | null = null
   private listeners: Set<() => void> = new Set()
 
@@ -164,6 +184,28 @@ class SessionDataStore {
         createdAt: new Date()
       }
     ]
+
+    this.costumes[defaultSequence.id] = [
+      {
+        id: 'costume-1',
+        nomCostume: 'Robe noire',
+        roleId: 'role-1', // Assigné à Claire Dubois
+        statut: 'A validé',
+        notesCostume: 'Médecin urgentiste brillant mais tourmenté par un drame personne',
+        createdAt: new Date()
+      }
+    ]
+
+    this.accessoires[defaultSequence.id] = [
+      {
+        id: 'accessoire-1',
+        nomAccessoire: 'Bague',
+        roleId: 'role-1', // Assigné à Claire Dubois
+        statut: 'A validé',
+        notesAccessoire: 'Médecin urgentiste brillant mais tourmenté par un drame personne',
+        createdAt: new Date()
+      }
+    ]
   }
 
   // Persist in sessionStorage
@@ -174,6 +216,8 @@ class SessionDataStore {
         decors: this.decors,
         scenes: this.scenes,
         roles: this.roles,
+        costumes: this.costumes,
+        accessoires: this.accessoires,
         currentSequenceId: this.currentSequenceId
       }
       if (typeof window !== 'undefined' && window.sessionStorage) {
@@ -209,6 +253,8 @@ class SessionDataStore {
         this.decors = {}
         this.scenes = {}
         this.roles = {}
+        this.costumes = {}
+        this.accessoires = {}
 
         // Normalize sequences and extract decors/scenes per sequence
         this.sequences = parsed.sequences.map((s: any) => {
@@ -223,8 +269,14 @@ class SessionDataStore {
           if (Array.isArray(s.roles) && s.roles.length > 0) {
             this.roles[seqId] = s.roles.map((r: any) => ({ ...r, createdAt: new Date(r.createdAt) }))
           }
+          if (Array.isArray(s.costumes) && s.costumes.length > 0) {
+            this.costumes[seqId] = s.costumes.map((c: any) => ({ ...c, createdAt: new Date(c.createdAt) }))
+          }
+          if (Array.isArray(s.accessoires) && s.accessoires.length > 0) {
+            this.accessoires[seqId] = s.accessoires.map((a: any) => ({ ...a, createdAt: new Date(a.createdAt) }))
+          }
 
-          // fallback to parsed.decors / parsed.scenes / parsed.roles maps
+          // fallback to parsed.decors / parsed.scenes / parsed.roles / parsed.costumes / parsed.accessoires maps
           if (!this.decors[seqId] && parsed.decors && parsed.decors[seqId]) {
             this.decors[seqId] = (parsed.decors[seqId] || []).map((d: any) => ({ ...d, createdAt: new Date(d.createdAt) }))
           }
@@ -233,6 +285,12 @@ class SessionDataStore {
           }
           if (!this.roles[seqId] && parsed.roles && parsed.roles[seqId]) {
             this.roles[seqId] = (parsed.roles[seqId] || []).map((r: any) => ({ ...r, createdAt: new Date(r.createdAt) }))
+          }
+          if (!this.costumes[seqId] && parsed.costumes && parsed.costumes[seqId]) {
+            this.costumes[seqId] = (parsed.costumes[seqId] || []).map((c: any) => ({ ...c, createdAt: new Date(c.createdAt) }))
+          }
+          if (!this.accessoires[seqId] && parsed.accessoires && parsed.accessoires[seqId]) {
+            this.accessoires[seqId] = (parsed.accessoires[seqId] || []).map((a: any) => ({ ...a, createdAt: new Date(a.createdAt) }))
           }
 
           return {
@@ -252,11 +310,13 @@ class SessionDataStore {
           }
         })
 
-        // ensure decors/scenes/roles maps exist for each sequence
+        // ensure decors/scenes/roles/costumes/accessoires maps exist for each sequence
         this.sequences.forEach((seq) => {
           if (!this.decors[seq.id]) this.decors[seq.id] = []
           if (!this.scenes[seq.id]) this.scenes[seq.id] = []
           if (!this.roles[seq.id]) this.roles[seq.id] = []
+          if (!this.costumes[seq.id]) this.costumes[seq.id] = []
+          if (!this.accessoires[seq.id]) this.accessoires[seq.id] = []
         })
 
         this.currentSequenceId = parsed.currentSequenceId || (this.sequences[0] && this.sequences[0].id) || null
@@ -282,6 +342,8 @@ class SessionDataStore {
     this.decors[newSequence.id] = []
     this.scenes[newSequence.id] = []
     this.roles[newSequence.id] = []
+    this.costumes[newSequence.id] = []
+    this.accessoires[newSequence.id] = []
     this.save()
     return newSequence
   }
@@ -321,10 +383,12 @@ class SessionDataStore {
 
     this.sequences.splice(index, 1)
     
-    // Nettoyer les décors, scènes et rôles associés
+    // Nettoyer les décors, scènes, rôles, costumes et accessoires associés
     delete this.decors[id]
     delete this.scenes[id]
     delete this.roles[id]
+    delete this.costumes[id]
+    delete this.accessoires[id]
     
     // Réinitialiser la séquence courante si c'était celle supprimée
     if (this.currentSequenceId === id) {
@@ -491,12 +555,108 @@ class SessionDataStore {
     return true
   }
 
+  // === CRUD COSTUMES ===
+  createCostume(sequenceId: string, data: Omit<Costume, 'id' | 'createdAt'>): Costume | null {
+    if (!this.getSequence(sequenceId)) return null
+
+    const newCostume: Costume = {
+      ...data,
+      id: `costume-${Date.now()}`,
+      createdAt: new Date()
+    }
+
+    if (!this.costumes[sequenceId]) {
+      this.costumes[sequenceId] = []
+    }
+    
+    this.costumes[sequenceId].push(newCostume)
+    this.save()
+    return newCostume
+  }
+
+  getCostumes(sequenceId: string): Costume[] {
+    return this.costumes[sequenceId] || []
+  }
+
+  updateCostume(sequenceId: string, costumeId: string, updates: Partial<Omit<Costume, 'id' | 'createdAt'>>): Costume | null {
+    const costumes = this.costumes[sequenceId]
+    if (!costumes) return null
+
+    const costume = costumes.find(c => c.id === costumeId)
+    if (!costume) return null
+
+    Object.assign(costume, updates)
+    this.save()
+    return costume
+  }
+
+  deleteCostume(sequenceId: string, costumeId: string): boolean {
+    const costumes = this.costumes[sequenceId]
+    if (!costumes) return false
+
+    const index = costumes.findIndex(c => c.id === costumeId)
+    if (index === -1) return false
+
+    costumes.splice(index, 1)
+    this.save()
+    return true
+  }
+
+  // === CRUD ACCESSOIRES ===
+  createAccessoire(sequenceId: string, data: Omit<Accessoire, 'id' | 'createdAt'>): Accessoire | null {
+    if (!this.getSequence(sequenceId)) return null
+
+    const newAccessoire: Accessoire = {
+      ...data,
+      id: `accessoire-${Date.now()}`,
+      createdAt: new Date()
+    }
+
+    if (!this.accessoires[sequenceId]) {
+      this.accessoires[sequenceId] = []
+    }
+    
+    this.accessoires[sequenceId].push(newAccessoire)
+    this.save()
+    return newAccessoire
+  }
+
+  getAccessoires(sequenceId: string): Accessoire[] {
+    return this.accessoires[sequenceId] || []
+  }
+
+  updateAccessoire(sequenceId: string, accessoireId: string, updates: Partial<Omit<Accessoire, 'id' | 'createdAt'>>): Accessoire | null {
+    const accessoires = this.accessoires[sequenceId]
+    if (!accessoires) return null
+
+    const accessoire = accessoires.find(a => a.id === accessoireId)
+    if (!accessoire) return null
+
+    Object.assign(accessoire, updates)
+    this.save()
+    return accessoire
+  }
+
+  deleteAccessoire(sequenceId: string, accessoireId: string): boolean {
+    const accessoires = this.accessoires[sequenceId]
+    if (!accessoires) return false
+
+    const index = accessoires.findIndex(a => a.id === accessoireId)
+    if (index === -1) return false
+
+    accessoires.splice(index, 1)
+    this.save()
+    return true
+  }
+
   // === UTILITAIRES ===
   getSequenceStats(sequenceId: string) {
     return {
       decorsCount: this.getDecors(sequenceId).length,
       scenesCount: this.getScenes(sequenceId).length,
-      rolesCount: this.getRoles(sequenceId).length
+      rolesCount: this.getRoles(sequenceId).length,
+      costumesCount: this.getCostumes(sequenceId).length,
+      accessoiresCount: this.getAccessoires(sequenceId).length
     }
   }
 
@@ -505,7 +665,9 @@ class SessionDataStore {
       totalSequences: this.sequences.length,
       totalDecors: Object.values(this.decors).flat().length,
       totalScenes: Object.values(this.scenes).flat().length,
-      totalRoles: Object.values(this.roles).flat().length
+      totalRoles: Object.values(this.roles).flat().length,
+      totalCostumes: Object.values(this.costumes).flat().length,
+      totalAccessoires: Object.values(this.accessoires).flat().length
     }
   }
 
@@ -517,6 +679,8 @@ class SessionDataStore {
     console.log('Decors by sequence:', this.decors)
     console.log('Scenes by sequence:', this.scenes)
     console.log('Roles by sequence:', this.roles)
+    console.log('Costumes by sequence:', this.costumes)
+    console.log('Accessoires by sequence:', this.accessoires)
     console.log('Stats:', this.getAllStats())
   }
 

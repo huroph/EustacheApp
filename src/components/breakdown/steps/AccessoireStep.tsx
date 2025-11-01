@@ -1,6 +1,79 @@
 'use client'
 
+import { useState, useEffect } from 'react'
+import { Accessoire, Role, sessionStore } from '@/lib/sessionData'
+import AccessoiresList from './accessoires/AccessoiresList'
+import AccessoireForm from './accessoires/AccessoireForm'
+
 export default function AccessoireStep() {
+  const [accessoires, setAccessoires] = useState<Accessoire[]>([])
+  const [roles, setRoles] = useState<Role[]>([])
+  const [viewMode, setViewMode] = useState<'list' | 'form'>('list')
+  const [editingAccessoire, setEditingAccessoire] = useState<Accessoire | null>(null)
+  const [roleNames, setRoleNames] = useState<{ [roleId: string]: string }>({})
+
+  const loadData = () => {
+    const currentSequence = sessionStore.getCurrentSequence()
+    if (currentSequence) {
+      const sequenceAccessoires = sessionStore.getAccessoires(currentSequence.id)
+      const sequenceRoles = sessionStore.getRoles(currentSequence.id)
+      
+      setAccessoires(sequenceAccessoires)
+      setRoles(sequenceRoles)
+      
+      // Créer un map roleId -> nom pour l'affichage
+      const names: { [roleId: string]: string } = {}
+      sequenceRoles.forEach(role => {
+        names[role.id] = role.nomRole
+      })
+      setRoleNames(names)
+    }
+  }
+
+  useEffect(() => {
+    loadData()
+  }, [])
+
+  const handleCreateAccessoire = () => {
+    setEditingAccessoire(null)
+    setViewMode('form')
+  }
+
+  const handleEditAccessoire = (accessoire: Accessoire) => {
+    setEditingAccessoire(accessoire)
+    setViewMode('form')
+  }
+
+  const handleDeleteAccessoire = (accessoireId: string) => {
+    const currentSequence = sessionStore.getCurrentSequence()
+    if (!currentSequence) return
+
+    sessionStore.deleteAccessoire(currentSequence.id, accessoireId)
+    loadData()
+  }
+
+  const handleSaveAccessoire = (accessoireData: Omit<Accessoire, 'id' | 'createdAt'>) => {
+    const currentSequence = sessionStore.getCurrentSequence()
+    if (!currentSequence) return
+
+    if (editingAccessoire) {
+      // Mise à jour
+      sessionStore.updateAccessoire(currentSequence.id, editingAccessoire.id, accessoireData)
+    } else {
+      // Création
+      sessionStore.createAccessoire(currentSequence.id, accessoireData)
+    }
+
+    loadData()
+    setViewMode('list')
+    setEditingAccessoire(null)
+  }
+
+  const handleBackToList = () => {
+    setViewMode('list')
+    setEditingAccessoire(null)
+  }
+
   return (
     <div className="space-y-6">
       <div className="space-y-2">
@@ -8,15 +81,22 @@ export default function AccessoireStep() {
         <div className="w-full h-px bg-blue-500"></div>
       </div>
 
-      <div className="bg-slate-700 p-6 rounded-lg text-center">
-        <div className="text-gray-400 mb-2">
-          <svg className="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-          </svg>
-          <h3 className="text-lg font-medium text-white mb-2">Étape Accessoire</h3>
-          <p className="text-sm">Cette section sera développée prochainement</p>
-        </div>
-      </div>
+      {viewMode === 'list' ? (
+        <AccessoiresList
+          accessoires={accessoires}
+          onCreateAccessoire={handleCreateAccessoire}
+          onEditAccessoire={handleEditAccessoire}
+          onDeleteAccessoire={handleDeleteAccessoire}
+          roleNames={roleNames}
+        />
+      ) : (
+        <AccessoireForm
+          accessoire={editingAccessoire}
+          roles={roles}
+          onSave={handleSaveAccessoire}
+          onCancel={handleBackToList}
+        />
+      )}
     </div>
   )
 }

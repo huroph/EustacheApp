@@ -1,6 +1,79 @@
 'use client'
 
+import { useState, useEffect } from 'react'
+import { Costume, Role, sessionStore } from '@/lib/sessionData'
+import CostumesList from './costumes/CostumesList'
+import CostumeForm from './costumes/CostumeForm'
+
 export default function CostumeStep() {
+  const [costumes, setCostumes] = useState<Costume[]>([])
+  const [roles, setRoles] = useState<Role[]>([])
+  const [viewMode, setViewMode] = useState<'list' | 'form'>('list')
+  const [editingCostume, setEditingCostume] = useState<Costume | null>(null)
+  const [roleNames, setRoleNames] = useState<{ [roleId: string]: string }>({})
+
+  const loadData = () => {
+    const currentSequence = sessionStore.getCurrentSequence()
+    if (currentSequence) {
+      const sequenceCostumes = sessionStore.getCostumes(currentSequence.id)
+      const sequenceRoles = sessionStore.getRoles(currentSequence.id)
+      
+      setCostumes(sequenceCostumes)
+      setRoles(sequenceRoles)
+      
+      // Créer un map roleId -> nom pour l'affichage
+      const names: { [roleId: string]: string } = {}
+      sequenceRoles.forEach(role => {
+        names[role.id] = role.nomRole
+      })
+      setRoleNames(names)
+    }
+  }
+
+  useEffect(() => {
+    loadData()
+  }, [])
+
+  const handleCreateCostume = () => {
+    setEditingCostume(null)
+    setViewMode('form')
+  }
+
+  const handleEditCostume = (costume: Costume) => {
+    setEditingCostume(costume)
+    setViewMode('form')
+  }
+
+  const handleDeleteCostume = (costumeId: string) => {
+    const currentSequence = sessionStore.getCurrentSequence()
+    if (!currentSequence) return
+
+    sessionStore.deleteCostume(currentSequence.id, costumeId)
+    loadData()
+  }
+
+  const handleSaveCostume = (costumeData: Omit<Costume, 'id' | 'createdAt'>) => {
+    const currentSequence = sessionStore.getCurrentSequence()
+    if (!currentSequence) return
+
+    if (editingCostume) {
+      // Mise à jour
+      sessionStore.updateCostume(currentSequence.id, editingCostume.id, costumeData)
+    } else {
+      // Création
+      sessionStore.createCostume(currentSequence.id, costumeData)
+    }
+
+    loadData()
+    setViewMode('list')
+    setEditingCostume(null)
+  }
+
+  const handleBackToList = () => {
+    setViewMode('list')
+    setEditingCostume(null)
+  }
+
   return (
     <div className="space-y-6">
       <div className="space-y-2">
@@ -8,15 +81,22 @@ export default function CostumeStep() {
         <div className="w-full h-px bg-blue-500"></div>
       </div>
 
-      <div className="bg-slate-700 p-6 rounded-lg text-center">
-        <div className="text-gray-400 mb-2">
-          <svg className="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-          </svg>
-          <h3 className="text-lg font-medium text-white mb-2">Étape Costume</h3>
-          <p className="text-sm">Cette section sera développée prochainement</p>
-        </div>
-      </div>
+      {viewMode === 'list' ? (
+        <CostumesList
+          costumes={costumes}
+          onCreateCostume={handleCreateCostume}
+          onEditCostume={handleEditCostume}
+          onDeleteCostume={handleDeleteCostume}
+          roleNames={roleNames}
+        />
+      ) : (
+        <CostumeForm
+          costume={editingCostume}
+          roles={roles}
+          onSave={handleSaveCostume}
+          onCancel={handleBackToList}
+        />
+      )}
     </div>
   )
 }
