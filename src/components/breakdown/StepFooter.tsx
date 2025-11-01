@@ -23,6 +23,7 @@ export default function StepFooter({ currentIndex, total, onPrev, onNext, onSubm
     rolesCount: sessionStore.getRoles(currentSequence.id).length,
     costumesCount: sessionStore.getCostumes(currentSequence.id).length,
     accessoiresCount: sessionStore.getAccessoires(currentSequence.id).length,
+    effetsSpeciauxCount: sessionStore.getEffetsSpeciaux(currentSequence.id).length,
     title: currentSequence.title
   } : null
 
@@ -41,6 +42,7 @@ export default function StepFooter({ currentIndex, total, onPrev, onNext, onSubm
             <span>{sequenceStats.rolesCount} rôle(s)</span>
             <span>{sequenceStats.costumesCount} costume(s)</span>
             <span>{sequenceStats.accessoiresCount} accessoire(s)</span>
+            <span>{sequenceStats.effetsSpeciauxCount} effet(s) spéciaux</span>
           </div>
         </div>
       )}

@@ -9,7 +9,7 @@ import GeneralStep from './steps/GeneralStep'
 import RoleStep from './steps/RoleStep'
 import CostumeStep from './steps/CostumeStep'
 import AccessoireStep from './steps/AccessoireStep'
-import EffetsSpeciauxStep from './steps/EffetsSpeciauxStep'
+import { EffetsSpeciauxStep } from './steps/EffetsSpeciauxStep'
 import EquipeTechniqueStep from './steps/EquipeTechniqueStep'
 import SonStep from './steps/SonStep'
 import MachinerieStep from './steps/MachinerieStep'
@@ -197,7 +197,7 @@ export default function CreateSequenceForm({ onCancel, editMode = false, sequenc
       case "Accessoire":
         return <AccessoireStep />
       case "Effets spéciaux":
-        return <EffetsSpeciauxStep />
+        return <EffetsSpeciauxStep sequenceId={currentSequence?.id || ''} />
       case "Équipe technique":
         return <EquipeTechniqueStep />
       case "Son":

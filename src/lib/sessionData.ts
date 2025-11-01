@@ -62,6 +62,14 @@ export interface Accessoire {
   createdAt: Date
 }
 
+export interface EffetSpecial {
+  id: string
+  nom: string
+  statut: 'A validé' | 'En attente' | 'Validé' | 'Reporté'
+  description: string
+  createdAt: Date
+}
+
 export interface SequenceFormData {
   id: string
   code: string
@@ -85,6 +93,7 @@ class SessionDataStore {
   private roles: Record<string, Role[]> = {} // sequenceId -> Role[]
   private costumes: Record<string, Costume[]> = {} // sequenceId -> Costume[]
   private accessoires: Record<string, Accessoire[]> = {} // sequenceId -> Accessoire[]
+  private effetsSpeciaux: Record<string, EffetSpecial[]> = {} // sequenceId -> EffetSpecial[]
   private currentSequenceId: string | null = null
   private listeners: Set<() => void> = new Set()
 
@@ -206,6 +215,16 @@ class SessionDataStore {
         createdAt: new Date()
       }
     ]
+
+    this.effetsSpeciaux[defaultSequence.id] = [
+      {
+        id: 'effet-1',
+        nom: 'Explosion',
+        statut: 'A validé',
+        description: 'Explosion dans la rue avec fumée et débris',
+        createdAt: new Date()
+      }
+    ]
   }
 
   // Persist in sessionStorage
@@ -218,6 +237,7 @@ class SessionDataStore {
         roles: this.roles,
         costumes: this.costumes,
         accessoires: this.accessoires,
+        effetsSpeciaux: this.effetsSpeciaux,
         currentSequenceId: this.currentSequenceId
       }
       if (typeof window !== 'undefined' && window.sessionStorage) {
@@ -255,6 +275,7 @@ class SessionDataStore {
         this.roles = {}
         this.costumes = {}
         this.accessoires = {}
+        this.effetsSpeciaux = {}
 
         // Normalize sequences and extract decors/scenes per sequence
         this.sequences = parsed.sequences.map((s: any) => {
@@ -275,8 +296,11 @@ class SessionDataStore {
           if (Array.isArray(s.accessoires) && s.accessoires.length > 0) {
             this.accessoires[seqId] = s.accessoires.map((a: any) => ({ ...a, createdAt: new Date(a.createdAt) }))
           }
+          if (Array.isArray(s.effetsSpeciaux) && s.effetsSpeciaux.length > 0) {
+            this.effetsSpeciaux[seqId] = s.effetsSpeciaux.map((e: any) => ({ ...e, createdAt: new Date(e.createdAt) }))
+          }
 
-          // fallback to parsed.decors / parsed.scenes / parsed.roles / parsed.costumes / parsed.accessoires maps
+          // fallback to parsed.decors / parsed.scenes / parsed.roles / parsed.costumes / parsed.accessoires / parsed.effetsSpeciaux maps
           if (!this.decors[seqId] && parsed.decors && parsed.decors[seqId]) {
             this.decors[seqId] = (parsed.decors[seqId] || []).map((d: any) => ({ ...d, createdAt: new Date(d.createdAt) }))
           }
@@ -291,6 +315,9 @@ class SessionDataStore {
           }
           if (!this.accessoires[seqId] && parsed.accessoires && parsed.accessoires[seqId]) {
             this.accessoires[seqId] = (parsed.accessoires[seqId] || []).map((a: any) => ({ ...a, createdAt: new Date(a.createdAt) }))
+          }
+          if (!this.effetsSpeciaux[seqId] && parsed.effetsSpeciaux && parsed.effetsSpeciaux[seqId]) {
+            this.effetsSpeciaux[seqId] = (parsed.effetsSpeciaux[seqId] || []).map((e: any) => ({ ...e, createdAt: new Date(e.createdAt) }))
           }
 
           return {
@@ -310,13 +337,14 @@ class SessionDataStore {
           }
         })
 
-        // ensure decors/scenes/roles/costumes/accessoires maps exist for each sequence
+        // ensure decors/scenes/roles/costumes/accessoires/effetsSpeciaux maps exist for each sequence
         this.sequences.forEach((seq) => {
           if (!this.decors[seq.id]) this.decors[seq.id] = []
           if (!this.scenes[seq.id]) this.scenes[seq.id] = []
           if (!this.roles[seq.id]) this.roles[seq.id] = []
           if (!this.costumes[seq.id]) this.costumes[seq.id] = []
           if (!this.accessoires[seq.id]) this.accessoires[seq.id] = []
+          if (!this.effetsSpeciaux[seq.id]) this.effetsSpeciaux[seq.id] = []
         })
 
         this.currentSequenceId = parsed.currentSequenceId || (this.sequences[0] && this.sequences[0].id) || null
@@ -685,6 +713,47 @@ class SessionDataStore {
   }
 
   // Subscribe to changes (returns unsubscribe)
+  // CRUD methods for EffetsSpeciaux
+  createEffetSpecial(sequenceId: string, effeDataWithoutId: Omit<EffetSpecial, 'id' | 'createdAt'>): EffetSpecial {
+    const effet: EffetSpecial = {
+      id: `effet-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      ...effeDataWithoutId,
+      createdAt: new Date()
+    }
+    
+    if (!this.effetsSpeciaux[sequenceId]) {
+      this.effetsSpeciaux[sequenceId] = []
+    }
+    this.effetsSpeciaux[sequenceId].push(effet)
+    this.save()
+    return effet
+  }
+
+  getEffetsSpeciaux(sequenceId: string): EffetSpecial[] {
+    return this.effetsSpeciaux[sequenceId] || []
+  }
+
+  updateEffetSpecial(sequenceId: string, effeId: string, updates: Partial<Omit<EffetSpecial, 'id' | 'createdAt'>>): EffetSpecial | null {
+    const effets = this.effetsSpeciaux[sequenceId] || []
+    const index = effets.findIndex(e => e.id === effeId)
+    if (index === -1) return null
+    
+    const updated = { ...effets[index], ...updates }
+    this.effetsSpeciaux[sequenceId][index] = updated
+    this.save()
+    return updated
+  }
+
+  deleteEffetSpecial(sequenceId: string, effeId: string): boolean {
+    const effets = this.effetsSpeciaux[sequenceId] || []
+    const index = effets.findIndex(e => e.id === effeId)
+    if (index === -1) return false
+    
+    this.effetsSpeciaux[sequenceId].splice(index, 1)
+    this.save()
+    return true
+  }
+
   subscribe(fn: () => void) {
     this.listeners.add(fn)
     return () => {

@@ -1,22 +1,60 @@
 'use client'
 
-export default function EffetsSpeciauxStep() {
-  return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <p className="text-gray-400 text-sm">Configuration des effets spéciaux et visuels</p>
-        <div className="w-full h-px bg-blue-500"></div>
-      </div>
+import { sessionStore, EffetSpecial } from '@/lib/sessionData'
+import { EffetsSpeciauxList } from './effets-speciaux/EffetsSpeciauxList'
+import { EffetsSpeciauxForm } from './effets-speciaux/EffetsSpeciauxForm'
+import { useState, useEffect } from 'react'
 
-      <div className="bg-slate-700 p-6 rounded-lg text-center">
-        <div className="text-gray-400 mb-2">
-          <svg className="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-          </svg>
-          <h3 className="text-lg font-medium text-white mb-2">Étape Effets spéciaux</h3>
-          <p className="text-sm">Cette section sera développée prochainement</p>
-        </div>
-      </div>
-    </div>
+interface EffetsSpeciauxStepProps {
+  sequenceId: string
+}
+
+export function EffetsSpeciauxStep({ sequenceId }: EffetsSpeciauxStepProps) {
+  const [viewMode, setViewMode] = useState<'list' | 'form'>('list')
+  const [editingEffet, setEditingEffet] = useState<EffetSpecial | undefined>(undefined)
+
+  // Réinitialiser quand on change de séquence
+  useEffect(() => {
+    setViewMode('list')
+    setEditingEffet(undefined)
+  }, [sequenceId])
+
+  const handleCreateClick = () => {
+    setEditingEffet(undefined)
+    setViewMode('form')
+  }
+
+  const handleEditClick = (effet: EffetSpecial) => {
+    setEditingEffet(effet)
+    setViewMode('form')
+  }
+
+  const handleBackToList = () => {
+    setEditingEffet(undefined)
+    setViewMode('list')
+  }
+
+  const handleFormSuccess = () => {
+    setEditingEffet(undefined)
+    setViewMode('list')
+  }
+
+  if (viewMode === 'form') {
+    return (
+      <EffetsSpeciauxForm
+        sequenceId={sequenceId}
+        effet={editingEffet}
+        onCancel={handleBackToList}
+        onSuccess={handleFormSuccess}
+      />
+    )
+  }
+
+  return (
+    <EffetsSpeciauxList
+      sequenceId={sequenceId}
+      onCreateClick={handleCreateClick}
+      onEditClick={handleEditClick}
+    />
   )
 }
