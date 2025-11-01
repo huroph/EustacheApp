@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { sessionStore, type Decor, type Scene } from '@/lib/sessionData'
 
 interface GeneralStepProps {
   formData: {
@@ -22,21 +23,68 @@ interface GeneralStepProps {
 const GENERAL_SUB_STEPS = ["Informations", "Décors", "Scènes"] as const
 type GeneralSubStep = typeof GENERAL_SUB_STEPS[number]
 
-// Mock data pour les décors
-const mockDecors = [
-  { id: 1, title: "Salon moderne", address: "Studio A", manoir: "Intérieur" },
-  { id: 2, title: "Rue parisienne", address: "Ext. Paris 15e", manoir: "Extérieur" },
-  { id: 3, title: "Bureau direction", address: "Tour Montparnasse", manoir: "Intérieur" }
-]
-
-// Mock data pour les scènes
-const mockScenes = [
-  { id: 1, numero: "SQ-001", statut: "A validé", decors: "Salon moderne", manoir: "Intérieur" },
-  { id: 2, numero: "SQ-002", statut: "A validé", decors: "Rue parisienne", manoir: "Extérieur" }
-]
-
 export default function GeneralStep({ formData, setFormData, showSuccess }: GeneralStepProps) {
   const [currentSubStep, setCurrentSubStep] = useState<GeneralSubStep>("Informations")
+  const [decors, setDecors] = useState<Decor[]>([])
+  const [scenes, setScenesData] = useState<(Scene & { decor?: Decor })[]>([])
+  const [isAddingDecor, setIsAddingDecor] = useState(false)
+  const [isAddingScene, setIsAddingScene] = useState(false)
+  const [newDecor, setNewDecor] = useState({ 
+    title: '', 
+    address: '', 
+    manoir: 'Intérieur' as const, 
+    status: 'A validé' as const 
+  })
+  const [newScene, setNewScene] = useState({ 
+    numero: '', 
+    decorId: '', 
+    status: 'A validé' as const, 
+    description: '', 
+    dureeEstimee: '' 
+  })
+
+  const currentSequence = sessionStore.getCurrentSequence()
+
+  // Charger les données au montage
+  useEffect(() => {
+    if (currentSequence) {
+      setDecors(sessionStore.getDecors(currentSequence.id))
+      setScenesData(sessionStore.getScenesWithDecors(currentSequence.id))
+      
+      // Synchroniser les données du formulaire avec la séquence courante
+      setFormData((prev: any) => ({
+        ...prev,
+        code: currentSequence.code,
+        title: currentSequence.title,
+        colorId: currentSequence.colorId,
+        status: currentSequence.status,
+        location: currentSequence.location,
+        summary: currentSequence.summary,
+        preMintage: currentSequence.preMintage,
+        ett: currentSequence.ett,
+        effet: currentSequence.effet,
+        type: currentSequence.type
+      }))
+    }
+  }, [currentSequence, setFormData])
+
+  // Synchroniser les changements du formulaire avec le sessionStore
+  useEffect(() => {
+    if (currentSequence && formData) {
+      sessionStore.updateSequence(currentSequence.id, {
+        code: formData.code,
+        title: formData.title,
+        colorId: formData.colorId,
+        status: formData.status as any,
+        location: formData.location,
+        summary: formData.summary,
+        preMintage: formData.preMintage,
+        ett: formData.ett,
+        effet: formData.effet as any,
+        type: formData.type as any
+      })
+    }
+  }, [formData, currentSequence])
 
   const availableColors = [
     { id: 'blue', color: 'bg-blue-500', name: 'Bleu' },
@@ -49,9 +97,68 @@ export default function GeneralStep({ formData, setFormData, showSuccess }: Gene
   const statusOptions = ['A validé', 'En attente', 'Validé', 'Reporté']
   const effetOptions = ['JOUR', 'NUIT']
   const typeOptions = ['INT', 'EXT']
+  const manoirOptions = ['Intérieur', 'Extérieur']
 
   const handleColorChange = (colorId: string) => {
     setFormData((prev: any) => ({ ...prev, colorId }))
+  }
+
+  // CRUD Décors
+  const handleAddDecor = () => {
+    if (!currentSequence || !newDecor.title.trim()) return
+    
+    const created = sessionStore.createDecor(currentSequence.id, newDecor)
+    if (created) {
+      setDecors(sessionStore.getDecors(currentSequence.id))
+      setNewDecor({ title: '', address: '', manoir: 'Intérieur', status: 'A validé' })
+      setIsAddingDecor(false)
+    }
+  }
+
+  const handleUpdateDecor = (decorId: string, field: string, value: string) => {
+    if (!currentSequence) return
+    
+    sessionStore.updateDecor(currentSequence.id, decorId, { [field]: value })
+    setDecors(sessionStore.getDecors(currentSequence.id))
+    setScenesData(sessionStore.getScenesWithDecors(currentSequence.id))
+  }
+
+  const handleDeleteDecor = (decorId: string) => {
+    if (!currentSequence) return
+    
+    if (confirm('Supprimer ce décor supprimera aussi toutes les scènes associées. Continuer ?')) {
+      sessionStore.deleteDecor(currentSequence.id, decorId)
+      setDecors(sessionStore.getDecors(currentSequence.id))
+      setScenesData(sessionStore.getScenesWithDecors(currentSequence.id))
+    }
+  }
+
+  // CRUD Scènes
+  const handleAddScene = () => {
+    if (!currentSequence || !newScene.numero.trim() || !newScene.decorId) return
+    
+    const created = sessionStore.createScene(currentSequence.id, newScene)
+    if (created) {
+      setScenesData(sessionStore.getScenesWithDecors(currentSequence.id))
+      setNewScene({ numero: '', decorId: '', status: 'A validé', description: '', dureeEstimee: '' })
+      setIsAddingScene(false)
+    }
+  }
+
+  const handleUpdateScene = (sceneId: string, field: string, value: string) => {
+    if (!currentSequence) return
+    
+    sessionStore.updateScene(currentSequence.id, sceneId, { [field]: value })
+    setScenesData(sessionStore.getScenesWithDecors(currentSequence.id))
+  }
+
+  const handleDeleteScene = (sceneId: string) => {
+    if (!currentSequence) return
+    
+    if (confirm('Supprimer cette scène ?')) {
+      sessionStore.deleteScene(currentSequence.id, sceneId)
+      setScenesData(sessionStore.getScenesWithDecors(currentSequence.id))
+    }
   }
 
   const renderSubStepContent = () => {
@@ -241,8 +348,11 @@ export default function GeneralStep({ formData, setFormData, showSuccess }: Gene
   const renderDecorsStep = () => (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-gray-400 text-sm">Lieux de tournage</h3>
-        <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm flex items-center space-x-2">
+        <h3 className="text-gray-400 text-sm">Lieux de tournage ({decors.length})</h3>
+        <button 
+          onClick={() => setIsAddingDecor(true)}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm flex items-center space-x-2"
+        >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
@@ -250,8 +360,81 @@ export default function GeneralStep({ formData, setFormData, showSuccess }: Gene
         </button>
       </div>
 
+      {/* Formulaire d'ajout */}
+      {isAddingDecor && (
+        <div className="bg-slate-700 border-2 border-blue-500 rounded-lg p-4">
+          <h4 className="text-white font-medium mb-4">Nouveau décor</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-xs text-gray-400 mb-1">Titre *</label>
+              <input
+                type="text"
+                value={newDecor.title}
+                onChange={(e) => setNewDecor(prev => ({ ...prev, title: e.target.value }))}
+                placeholder="Nom du décor..."
+                className="w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded text-white text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-400 mb-1">Statut</label>
+              <select
+                value={newDecor.status}
+                onChange={(e) => setNewDecor(prev => ({ ...prev, status: e.target.value as any }))}
+                className="w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded text-white text-sm"
+              >
+                {statusOptions.map(status => (
+                  <option key={status} value={status}>{status}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-xs text-gray-400 mb-1">Adresse</label>
+              <input
+                type="text"
+                value={newDecor.address}
+                onChange={(e) => setNewDecor(prev => ({ ...prev, address: e.target.value }))}
+                placeholder="Adresse du lieu..."
+                className="w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded text-white text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-400 mb-1">Type</label>
+              <select
+                value={newDecor.manoir}
+                onChange={(e) => setNewDecor(prev => ({ ...prev, manoir: e.target.value as any }))}
+                className="w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded text-white text-sm"
+              >
+                {manoirOptions.map(type => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="flex space-x-2">
+            <button
+              onClick={handleAddDecor}
+              disabled={!newDecor.title.trim()}
+              className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white px-4 py-2 rounded text-sm"
+            >
+              Créer
+            </button>
+            <button
+              onClick={() => {
+                setIsAddingDecor(false)
+                setNewDecor({ title: '', address: '', manoir: 'Intérieur', status: 'A validé' })
+              }}
+              className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm"
+            >
+              Annuler
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-4">
-        {mockDecors.map((decor, index) => (
+        {decors.map((decor) => (
           <div key={decor.id} className="bg-slate-700 border border-slate-600 rounded-lg p-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
               <div>
@@ -259,7 +442,7 @@ export default function GeneralStep({ formData, setFormData, showSuccess }: Gene
                 <input
                   type="text"
                   value={decor.title}
-                  readOnly
+                  onChange={(e) => handleUpdateDecor(decor.id, 'title', e.target.value)}
                   className="w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded text-white text-sm"
                 />
               </div>
@@ -267,16 +450,21 @@ export default function GeneralStep({ formData, setFormData, showSuccess }: Gene
               <div>
                 <label className="block text-xs text-gray-400 mb-1">Statut</label>
                 <select
-                  value="A validé"
-                  disabled
+                  value={decor.status}
+                  onChange={(e) => handleUpdateDecor(decor.id, 'status', e.target.value)}
                   className="w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded text-white text-sm"
                 >
-                  <option>A validé</option>
+                  {statusOptions.map(status => (
+                    <option key={status} value={status}>{status}</option>
+                  ))}
                 </select>
               </div>
 
               <div className="flex items-center justify-end">
-                <button className="text-red-400 hover:text-red-300 p-2">
+                <button 
+                  onClick={() => handleDeleteDecor(decor.id)}
+                  className="text-red-400 hover:text-red-300 p-2"
+                >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                   </svg>
@@ -285,27 +473,41 @@ export default function GeneralStep({ formData, setFormData, showSuccess }: Gene
             </div>
 
             <div className="mt-3">
-              <label className="block text-xs text-gray-400 mb-1">adresse</label>
+              <label className="block text-xs text-gray-400 mb-1">Adresse</label>
               <input
                 type="text"
                 value={decor.address}
-                readOnly
+                onChange={(e) => handleUpdateDecor(decor.id, 'address', e.target.value)}
                 className="w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded text-white text-sm"
               />
             </div>
 
             <div className="mt-3">
-              <label className="block text-xs text-gray-400 mb-1">Manoir</label>
+              <label className="block text-xs text-gray-400 mb-1">Type</label>
               <select
                 value={decor.manoir}
-                disabled
+                onChange={(e) => handleUpdateDecor(decor.id, 'manoir', e.target.value)}
                 className="w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded text-white text-sm"
               >
-                <option>{decor.manoir}</option>
+                {manoirOptions.map(type => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
               </select>
             </div>
           </div>
         ))}
+
+        {decors.length === 0 && !isAddingDecor && (
+          <div className="text-center py-8 text-gray-400">
+            <p>Aucun décor ajouté</p>
+            <button 
+              onClick={() => setIsAddingDecor(true)}
+              className="mt-2 text-blue-400 hover:text-blue-300"
+            >
+              Ajouter le premier décor
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -313,8 +515,12 @@ export default function GeneralStep({ formData, setFormData, showSuccess }: Gene
   const renderScenesStep = () => (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-gray-400 text-sm">Scènes</h3>
-        <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm flex items-center space-x-2">
+        <h3 className="text-gray-400 text-sm">Scènes ({scenes.length})</h3>
+        <button 
+          onClick={() => setIsAddingScene(true)}
+          disabled={decors.length === 0}
+          className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm flex items-center space-x-2"
+        >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
@@ -322,34 +528,128 @@ export default function GeneralStep({ formData, setFormData, showSuccess }: Gene
         </button>
       </div>
 
+      {decors.length === 0 && (
+        <div className="bg-yellow-900/50 text-yellow-200 p-3 rounded-lg">
+          Vous devez d'abord créer au moins un décor pour pouvoir ajouter des scènes.
+        </div>
+      )}
+
+      {/* Formulaire d'ajout */}
+      {isAddingScene && (
+        <div className="bg-slate-700 border-2 border-blue-500 rounded-lg p-4">
+          <h4 className="text-white font-medium mb-4">Nouvelle scène</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-xs text-gray-400 mb-1">Numéro *</label>
+              <input
+                type="text"
+                value={newScene.numero}
+                onChange={(e) => setNewScene(prev => ({ ...prev, numero: e.target.value }))}
+                placeholder="Ex: SQ-003"
+                className="w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded text-white text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-400 mb-1">Statut</label>
+              <select
+                value={newScene.status}
+                onChange={(e) => setNewScene(prev => ({ ...prev, status: e.target.value as any }))}
+                className="w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded text-white text-sm"
+              >
+                {statusOptions.map(status => (
+                  <option key={status} value={status}>{status}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-xs text-gray-400 mb-1">Décor *</label>
+              <select
+                value={newScene.decorId}
+                onChange={(e) => setNewScene(prev => ({ ...prev, decorId: e.target.value }))}
+                className="w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded text-white text-sm"
+              >
+                <option value="">Sélectionner un décor...</option>
+                {decors.map(decor => (
+                  <option key={decor.id} value={decor.id}>{decor.title}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs text-gray-400 mb-1">Durée estimée</label>
+              <input
+                type="text"
+                value={newScene.dureeEstimee}
+                onChange={(e) => setNewScene(prev => ({ ...prev, dureeEstimee: e.target.value }))}
+                placeholder="Ex: 05:30"
+                className="w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded text-white text-sm"
+              />
+            </div>
+          </div>
+          <div className="mb-4">
+            <label className="block text-xs text-gray-400 mb-1">Description</label>
+            <textarea
+              value={newScene.description}
+              onChange={(e) => setNewScene(prev => ({ ...prev, description: e.target.value }))}
+              placeholder="Description de la scène..."
+              rows={2}
+              className="w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded text-white text-sm resize-none"
+            />
+          </div>
+          <div className="flex space-x-2">
+            <button
+              onClick={handleAddScene}
+              disabled={!newScene.numero.trim() || !newScene.decorId}
+              className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white px-4 py-2 rounded text-sm"
+            >
+              Créer
+            </button>
+            <button
+              onClick={() => {
+                setIsAddingScene(false)
+                setNewScene({ numero: '', decorId: '', status: 'A validé', description: '', dureeEstimee: '' })
+              }}
+              className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm"
+            >
+              Annuler
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-4">
-        {mockScenes.map((scene, index) => (
+        {scenes.map((scene) => (
           <div key={scene.id} className="bg-slate-700 border border-slate-600 rounded-lg p-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
               <div>
                 <label className="block text-xs text-gray-400 mb-1">Numéro</label>
-                <select
+                <input
+                  type="text"
                   value={scene.numero}
-                  disabled
+                  onChange={(e) => handleUpdateScene(scene.id, 'numero', e.target.value)}
                   className="w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded text-white text-sm"
-                >
-                  <option>{scene.numero}</option>
-                </select>
+                />
               </div>
               
               <div>
                 <label className="block text-xs text-gray-400 mb-1">Statut</label>
                 <select
-                  value={scene.statut}
-                  disabled
+                  value={scene.status}
+                  onChange={(e) => handleUpdateScene(scene.id, 'status', e.target.value)}
                   className="w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded text-white text-sm"
                 >
-                  <option>{scene.statut}</option>
+                  {statusOptions.map(status => (
+                    <option key={status} value={status}>{status}</option>
+                  ))}
                 </select>
               </div>
 
               <div className="flex items-center justify-end">
-                <button className="text-red-400 hover:text-red-300 p-2">
+                <button 
+                  onClick={() => handleDeleteScene(scene.id)}
+                  className="text-red-400 hover:text-red-300 p-2"
+                >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                   </svg>
@@ -357,28 +657,55 @@ export default function GeneralStep({ formData, setFormData, showSuccess }: Gene
               </div>
             </div>
 
-            <div className="mt-3">
-              <label className="block text-xs text-gray-400 mb-1">Décors</label>
-              <input
-                type="text"
-                value={scene.decors}
-                readOnly
-                className="w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded text-white text-sm"
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">Décor</label>
+                <select
+                  value={scene.decorId}
+                  onChange={(e) => handleUpdateScene(scene.id, 'decorId', e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded text-white text-sm"
+                >
+                  {decors.map(decor => (
+                    <option key={decor.id} value={decor.id}>{decor.title}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">Durée estimée</label>
+                <input
+                  type="text"
+                  value={scene.dureeEstimee || ''}
+                  onChange={(e) => handleUpdateScene(scene.id, 'dureeEstimee', e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded text-white text-sm"
+                />
+              </div>
             </div>
 
-            <div className="mt-3">
-              <label className="block text-xs text-gray-400 mb-1">Manoir</label>
-              <select
-                value={scene.manoir}
-                disabled
-                className="w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded text-white text-sm"
-              >
-                <option>{scene.manoir}</option>
-              </select>
-            </div>
+            {(scene.description || scene.description === '') && (
+              <div className="mt-3">
+                <label className="block text-xs text-gray-400 mb-1">Description</label>
+                <textarea
+                  value={scene.description}
+                  onChange={(e) => handleUpdateScene(scene.id, 'description', e.target.value)}
+                  rows={2}
+                  className="w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded text-white text-sm resize-none"
+                />
+              </div>
+            )}
           </div>
         ))}
+
+        {scenes.length === 0 && !isAddingScene && decors.length > 0 && (
+          <div className="text-center py-8 text-gray-400">
+            <p>Aucune scène ajoutée</p>
+            <button 
+              onClick={() => setIsAddingScene(true)}
+              className="mt-2 text-blue-400 hover:text-blue-300"
+            >
+              Ajouter la première scène
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )

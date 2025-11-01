@@ -1,6 +1,7 @@
 'use client'
 
 import Button from '@/components/ui/Button'
+import { sessionStore } from '@/lib/sessionData'
 
 interface StepFooterProps {
   currentIndex: number
@@ -13,32 +14,62 @@ interface StepFooterProps {
 export default function StepFooter({ currentIndex, total, onPrev, onNext, onSubmit }: StepFooterProps) {
   const isFirst = currentIndex === 0
   const isLast = currentIndex === total - 1
+  
+  // Informations sur la séquence courante
+  const currentSequence = sessionStore.getCurrentSequence()
+  const sequenceInfo = currentSequence ? {
+    decorsCount: currentSequence.decors.length,
+    scenesCount: currentSequence.scenes.length,
+    title: currentSequence.title
+  } : null
 
   return (
-    <div className="flex items-center justify-between ">
-      <div className="flex items-center space-x-4">
-        <Button 
-          type="button" 
-          variant="secondary" 
-          onClick={onPrev}
-          disabled={isFirst}
-        >
-          Précédent
-        </Button>
-        <span className="text-gray-400 text-sm">
-          {currentIndex + 1} of {total}
-        </span>
-      </div>
-      
-      {isLast ? (
-        <Button type="button" variant="default" onClick={onSubmit}>
-          Créer la séquence
-        </Button>
-      ) : (
-        <Button type="button" variant="default" onClick={onNext}>
-          Suivant
-        </Button>
+    <div className="space-y-3">
+      {/* Informations de la séquence */}
+      {isLast && sequenceInfo && (
+        <div className="bg-slate-700 p-3 rounded-lg text-sm text-gray-300">
+          <div className="flex items-center justify-between">
+            <span className="font-medium">Résumé de la séquence:</span>
+            <span className="text-blue-400">"{sequenceInfo.title}"</span>
+          </div>
+          <div className="flex items-center space-x-4 mt-2 text-xs">
+            <span>{sequenceInfo.decorsCount} décor(s)</span>
+            <span>{sequenceInfo.scenesCount} scène(s)</span>
+          </div>
+        </div>
       )}
+      
+      {/* Navigation */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <Button 
+            type="button" 
+            variant="secondary" 
+            onClick={onPrev}
+            disabled={isFirst}
+          >
+            Précédent
+          </Button>
+          <span className="text-gray-400 text-sm">
+            {currentIndex + 1} of {total}
+          </span>
+        </div>
+        
+        {isLast ? (
+          <Button 
+            type="button" 
+            variant="default" 
+            onClick={onSubmit}
+            className="bg-green-600 hover:bg-green-700"
+          >
+            Créer la séquence
+          </Button>
+        ) : (
+          <Button type="button" variant="default" onClick={onNext}>
+            Suivant
+          </Button>
+        )}
+      </div>
     </div>
   )
 }

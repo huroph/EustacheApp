@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { sessionStore } from '@/lib/sessionData'
 import StepHeader from './StepHeader'
 import StepFooter from './StepFooter'
 import GeneralStep from './steps/GeneralStep'
@@ -47,6 +48,19 @@ export default function CreateSequenceForm({ onCancel }: CreateSequenceFormProps
 
   const currentIndex = STEPS.indexOf(currentStep)
 
+  // Debug: afficher l'état actuel
+  const currentSequence = sessionStore.getCurrentSequence()
+  console.log('État actuel du stepper:', {
+    currentStep,
+    currentSequence: currentSequence ? {
+      id: currentSequence.id,
+      title: currentSequence.title,
+      decorsCount: currentSequence.decors.length,
+      scenesCount: currentSequence.scenes.length
+    } : 'Aucune séquence courante',
+    formData
+  })
+
   const goNext = () => {
     if (currentIndex < STEPS.length - 1) {
       setCurrentStep(STEPS[currentIndex + 1])
@@ -63,10 +77,80 @@ export default function CreateSequenceForm({ onCancel }: CreateSequenceFormProps
     setCurrentStep(step)
   }
 
+  // Fonction de debug pour vérifier les données
+  const debugSequence = () => {
+    const allSequences = sessionStore.getSequences()
+    const current = sessionStore.getCurrentSequence()
+    console.log('=== DEBUG SEQUENCE ===')
+    console.log('Toutes les séquences:', allSequences)
+    console.log('Séquence courante:', current)
+    console.log('FormData:', formData)
+    console.log('======================')
+  }
+
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault()
-    setShowSuccess(true)
-    setTimeout(() => setShowSuccess(false), 3000)
+    
+    try {
+      // Récupérer la séquence courante avec tous ses décors et scènes
+      const currentSequence = sessionStore.getCurrentSequence()
+      
+      if (currentSequence) {
+        // Mettre à jour les données générales de la séquence existante
+        const updatedSequence = sessionStore.updateSequence(currentSequence.id, {
+          code: formData.code,
+          title: formData.title,
+          colorId: formData.colorId,
+          status: formData.status as any,
+          location: formData.location,
+          summary: formData.summary,
+          preMintage: formData.preMintage,
+          ett: formData.ett,
+          effet: formData.effet as any,
+          type: formData.type as any
+        })
+        
+        if (updatedSequence) {
+          setShowSuccess(true)
+          console.log('Séquence créée/mise à jour:', {
+            ...updatedSequence,
+            totalDecors: updatedSequence.decors.length,
+            totalScenes: updatedSequence.scenes.length
+          })
+          
+          // Simuler la sauvegarde
+          setTimeout(() => {
+            setShowSuccess(false)
+            alert(`Séquence "${updatedSequence.title}" créée avec succès!\n\nDétails:\n- ${updatedSequence.decors.length} décor(s)\n- ${updatedSequence.scenes.length} scène(s)\n- Code: ${updatedSequence.code}`)
+          }, 1000)
+        }
+      } else {
+        // Créer une nouvelle séquence si aucune n'existe
+        const newSequence = sessionStore.createSequence({
+          code: formData.code,
+          title: formData.title,
+          colorId: formData.colorId,
+          status: formData.status as any,
+          location: formData.location,
+          summary: formData.summary,
+          preMintage: formData.preMintage,
+          ett: formData.ett,
+          effet: formData.effet as any,
+          type: formData.type as any
+        })
+        
+        setShowSuccess(true)
+        console.log('Nouvelle séquence créée:', newSequence)
+        
+        setTimeout(() => {
+          setShowSuccess(false)
+          alert(`Nouvelle séquence "${newSequence.title}" créée avec succès!`)
+        }, 1000)
+      }
+    } catch (error) {
+      console.error('Erreur lors de la création de la séquence:', error)
+      alert('Erreur lors de la création de la séquence. Vérifiez la console pour plus de détails.')
+    }
   }
 
   const renderStepContent = () => {
@@ -102,12 +186,21 @@ export default function CreateSequenceForm({ onCancel }: CreateSequenceFormProps
     <div className="bg-slate-800 rounded-lg h-full flex flex-col">
       {/* Header */}
       <div className="flex-shrink-0 p-4 md:p-6 border-b border-slate-600">
-        <StepHeader
-          current={currentStep}
-          steps={STEPS}
-          onSelect={goTo}
-          onClose={onCancel}
-        />
+        <div className="flex items-center justify-between">
+          <StepHeader
+            current={currentStep}
+            steps={STEPS}
+            onSelect={goTo}
+            onClose={onCancel}
+          />
+          {/* Bouton debug temporaire */}
+          <button
+            onClick={debugSequence}
+            className="ml-4 text-xs bg-yellow-600 hover:bg-yellow-700 text-white px-2 py-1 rounded"
+          >
+            Debug
+          </button>
+        </div>
       </div>
 
       {/* Content - Scrollable */}
