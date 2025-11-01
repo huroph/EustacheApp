@@ -71,7 +71,7 @@ export default function BreakdownPage() {
         }`}>
           {/* Script viewer (left side) - Scrollable */}
           <div className={`rounded-lg overflow-y-auto ${
-            isCreateMode ? 'lg:col-span-8' : ''
+            isCreateMode ? 'lg:col-span-7' : ''
           }`}>
             {isCreateMode ? (
               // Mode création : affichage du PDF
@@ -81,7 +81,7 @@ export default function BreakdownPage() {
                 </div>
                 <iframe
                   src="/scenarios/Joyeux-Noël.pdf"
-                  className="w-full h-full min-h-[600px] rounded border border-slate-600"
+                  className="w-full h-[70vh] min-h-[400px] max-h-[800px] rounded border border-slate-600"
                   title="Script Joyeux Noël"
                 />
               </div>
@@ -143,7 +143,7 @@ export default function BreakdownPage() {
 
           {/* Actions panel or Create form (right side) */}
           {isCreateMode ? (
-            <div className="lg:col-span-4 overflow-y-hidden">
+            <div className="lg:col-span-5 overflow-y-hidden">
               <CreateSequenceForm onCancel={handleCancel} />
             </div>
           ) : (
