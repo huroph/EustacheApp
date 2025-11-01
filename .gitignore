@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local scenarios and documents (not committed)
+/scenarios/
+/documents/
+/public/scenarios/

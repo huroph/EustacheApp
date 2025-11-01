@@ -11,6 +11,17 @@ export type Project = {
   coverUrl?: string;
 };
 
+export type Sequence = {
+  id: string;
+  code: string;
+  tags: string[];    // ['EXT','JOUR'] …
+  title: string;
+  time: string;      // '1h30'
+  location?: string;
+  summary?: string;
+  roles?: string[];  // ['Acteurs','Equipe','Silhouette']
+};
+
 export const projects: Project[] = [
   {
     id: "prj_aurora2026",
