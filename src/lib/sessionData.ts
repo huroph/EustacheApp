@@ -1,6 +1,4 @@
-// Données temporaires pour la session - stockage en mémoire
-// Ces données seront perdues au rechargement de la page
-
+// Interfaces de base
 export interface Decor {
   id: string
   title: string
@@ -32,24 +30,49 @@ export interface SequenceFormData {
   ett: string
   effet: 'JOUR' | 'NUIT'
   type: 'INT' | 'EXT'
-  decors: Decor[]
-  scenes: Scene[]
   createdAt: Date
   updatedAt: Date
 }
 
-// Stockage en mémoire pour la session
 class SessionDataStore {
   private sequences: SequenceFormData[] = []
+  private decors: Record<string, Decor[]> = {} // sequenceId -> Decor[]
+  private scenes: Record<string, Scene[]> = {} // sequenceId -> Scene[]
   private currentSequenceId: string | null = null
+  private listeners: Set<() => void> = new Set()
 
-  // Données initiales
   constructor() {
-    this.initializeData()
+    this.load()
+    // fallback to defaults if nothing in session
+    if (!this.sequences || this.sequences.length === 0) {
+      this.initializeData()
+      this.save()
+    }
   }
 
   private initializeData() {
-    const defaultDecors: Decor[] = [
+    // Créer une séquence par défaut
+    const defaultSequence: SequenceFormData = {
+      id: 'seq-1',
+      code: 'SEQ-1',
+      title: 'Confrontation dans la rue',
+      colorId: 'blue',
+      status: 'A validé',
+      location: 'Studio A, Paris',
+      summary: 'Une scène d\'action intense dans les rues de Paris',
+      preMintage: '02:30',
+      ett: '01:45',
+      effet: 'JOUR',
+      type: 'EXT',
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }
+
+    this.sequences = [defaultSequence]
+    this.currentSequenceId = defaultSequence.id
+
+    // Ajouter des décors et scènes par défaut pour la séquence exemple
+    this.decors[defaultSequence.id] = [
       {
         id: 'decor-1',
         title: 'Salon moderne',
@@ -65,72 +88,138 @@ class SessionDataStore {
         manoir: 'Extérieur',
         status: 'A validé',
         createdAt: new Date()
-      },
-      {
-        id: 'decor-3',
-        title: 'Bureau direction',
-        address: 'Tour Montparnasse',
-        manoir: 'Intérieur',
-        status: 'A validé',
-        createdAt: new Date()
       }
     ]
 
-    const defaultScenes: Scene[] = [
+    this.scenes[defaultSequence.id] = [
       {
         id: 'scene-1',
-        numero: 'SQ-001',
+        numero: '1',
         decorId: 'decor-1',
         status: 'A validé',
-        description: 'Scène d\'ouverture',
+        description: 'Introduction des personnages',
         dureeEstimee: '05:30',
         createdAt: new Date()
       },
       {
         id: 'scene-2',
-        numero: 'SQ-002',
+        numero: '2',
         decorId: 'decor-2',
-        status: 'A validé',
-        description: 'Poursuite en extérieur',
+        status: 'En attente',
+        description: 'Poursuite dans la rue',
         dureeEstimee: '08:15',
         createdAt: new Date()
       }
     ]
-
-    const defaultSequence: SequenceFormData = {
-      id: 'seq-1',
-      code: 'SEQ-1',
-      title: 'Confrontation dans la rue',
-      colorId: 'blue',
-      status: 'A validé',
-      location: '',
-      summary: '',
-      preMintage: '00:00',
-      ett: '00:00',
-      effet: 'JOUR',
-      type: 'INT',
-      decors: defaultDecors,
-      scenes: defaultScenes,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }
-
-    this.sequences = [defaultSequence]
-    this.currentSequenceId = defaultSequence.id
   }
 
-  // CRUD pour Séquences
-  createSequence(data: Omit<SequenceFormData, 'id' | 'createdAt' | 'updatedAt' | 'decors' | 'scenes'>): SequenceFormData {
+  // Persist in sessionStorage
+  private save() {
+    try {
+      const payload = {
+        sequences: this.sequences,
+        decors: this.decors,
+        scenes: this.scenes,
+        currentSequenceId: this.currentSequenceId
+      }
+      if (typeof window !== 'undefined' && window.sessionStorage) {
+        window.sessionStorage.setItem('eustache.sessionData', JSON.stringify(payload))
+      }
+      // notify subscribers that data changed
+      this.notifyChange()
+    } catch (e) {
+      // ignore
+      console.warn('sessionStore.save error', e)
+    }
+  }
+
+  private notifyChange() {
+    try {
+      this.listeners.forEach((fn) => {
+        try { fn() } catch (e) { /* ignore individual listener errors */ }
+      })
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  private load() {
+    try {
+      if (typeof window === 'undefined' || !window.sessionStorage) return
+      const raw = window.sessionStorage.getItem('eustache.sessionData')
+      if (!raw) return
+      const parsed = JSON.parse(raw)
+      // basic validation
+      if (parsed && Array.isArray(parsed.sequences)) {
+        // Support legacy payloads where decors/scenes were nested inside sequences
+        this.decors = {}
+        this.scenes = {}
+
+        // Normalize sequences and extract decors/scenes per sequence
+        this.sequences = parsed.sequences.map((s: any) => {
+          const seqId = s.id
+          // if sequence contains nested decors/scenes, move them out
+          if (Array.isArray(s.decors) && s.decors.length > 0) {
+            this.decors[seqId] = s.decors.map((d: any) => ({ ...d, createdAt: new Date(d.createdAt) }))
+          }
+          if (Array.isArray(s.scenes) && s.scenes.length > 0) {
+            this.scenes[seqId] = s.scenes.map((sc: any) => ({ ...sc, createdAt: new Date(sc.createdAt) }))
+          }
+
+          // fallback to parsed.decors / parsed.scenes maps
+          if (!this.decors[seqId] && parsed.decors && parsed.decors[seqId]) {
+            this.decors[seqId] = (parsed.decors[seqId] || []).map((d: any) => ({ ...d, createdAt: new Date(d.createdAt) }))
+          }
+          if (!this.scenes[seqId] && parsed.scenes && parsed.scenes[seqId]) {
+            this.scenes[seqId] = (parsed.scenes[seqId] || []).map((sc: any) => ({ ...sc, createdAt: new Date(sc.createdAt) }))
+          }
+
+          return {
+            id: s.id,
+            code: s.code,
+            title: s.title,
+            colorId: s.colorId,
+            status: s.status,
+            location: s.location,
+            summary: s.summary,
+            preMintage: s.preMintage,
+            ett: s.ett,
+            effet: s.effet,
+            type: s.type,
+            createdAt: new Date(s.createdAt),
+            updatedAt: new Date(s.updatedAt)
+          }
+        })
+
+        // ensure decors/scenes maps exist for each sequence
+        this.sequences.forEach((seq) => {
+          if (!this.decors[seq.id]) this.decors[seq.id] = []
+          if (!this.scenes[seq.id]) this.scenes[seq.id] = []
+        })
+
+        this.currentSequenceId = parsed.currentSequenceId || (this.sequences[0] && this.sequences[0].id) || null
+      }
+    } catch (e) {
+      console.warn('sessionStore.load error', e)
+    }
+  }
+
+  // === CRUD SÉQUENCES ===
+  createSequence(data: Omit<SequenceFormData, 'id' | 'createdAt' | 'updatedAt'>): SequenceFormData {
     const newSequence: SequenceFormData = {
       ...data,
       id: `seq-${Date.now()}`,
-      decors: [],
-      scenes: [],
       createdAt: new Date(),
       updatedAt: new Date()
     }
+    
     this.sequences.push(newSequence)
     this.currentSequenceId = newSequence.id
+    
+    // Initialiser les collections pour cette séquence
+    this.decors[newSequence.id] = []
+    this.scenes[newSequence.id] = []
+    this.save()
     return newSequence
   }
 
@@ -147,16 +236,20 @@ class SessionDataStore {
     return this.getSequence(this.currentSequenceId)
   }
 
-  updateSequence(id: string, data: Partial<Omit<SequenceFormData, 'id' | 'createdAt' | 'updatedAt'>>): SequenceFormData | null {
-    const index = this.sequences.findIndex(seq => seq.id === id)
-    if (index === -1) return null
-
-    this.sequences[index] = {
-      ...this.sequences[index],
-      ...data,
-      updatedAt: new Date()
+  setCurrentSequence(id: string): void {
+    if (this.getSequence(id)) {
+      this.currentSequenceId = id
+      this.save()
     }
-    return this.sequences[index]
+  }
+
+  updateSequence(id: string, updates: Partial<Omit<SequenceFormData, 'id' | 'createdAt'>>): SequenceFormData | null {
+    const sequence = this.getSequence(id)
+    if (!sequence) return null
+
+    Object.assign(sequence, updates, { updatedAt: new Date() })
+    this.save()
+    return sequence
   }
 
   deleteSequence(id: string): boolean {
@@ -164,23 +257,22 @@ class SessionDataStore {
     if (index === -1) return false
 
     this.sequences.splice(index, 1)
+    
+    // Nettoyer les décors et scènes associés
+    delete this.decors[id]
+    delete this.scenes[id]
+    
+    // Réinitialiser la séquence courante si c'était celle supprimée
     if (this.currentSequenceId === id) {
-      this.currentSequenceId = this.sequences[0]?.id || null
+      this.currentSequenceId = this.sequences.length > 0 ? this.sequences[0].id : null
     }
+    this.save()
     return true
   }
 
-  setCurrentSequence(id: string): boolean {
-    const sequence = this.getSequence(id)
-    if (!sequence) return false
-    this.currentSequenceId = id
-    return true
-  }
-
-  // CRUD pour Décors
+  // === CRUD DÉCORS ===
   createDecor(sequenceId: string, data: Omit<Decor, 'id' | 'createdAt'>): Decor | null {
-    const sequence = this.getSequence(sequenceId)
-    if (!sequence) return null
+    if (!this.getSequence(sequenceId)) return null
 
     const newDecor: Decor = {
       ...data,
@@ -188,50 +280,52 @@ class SessionDataStore {
       createdAt: new Date()
     }
 
-    sequence.decors.push(newDecor)
-    sequence.updatedAt = new Date()
+    if (!this.decors[sequenceId]) {
+      this.decors[sequenceId] = []
+    }
+    
+    this.decors[sequenceId].push(newDecor)
+    this.save()
     return newDecor
   }
 
   getDecors(sequenceId: string): Decor[] {
-    const sequence = this.getSequence(sequenceId)
-    return sequence?.decors || []
+    return this.decors[sequenceId] || []
   }
 
-  updateDecor(sequenceId: string, decorId: string, data: Partial<Omit<Decor, 'id' | 'createdAt'>>): Decor | null {
-    const sequence = this.getSequence(sequenceId)
-    if (!sequence) return null
+  updateDecor(sequenceId: string, decorId: string, updates: Partial<Omit<Decor, 'id' | 'createdAt'>>): Decor | null {
+    const decors = this.decors[sequenceId]
+    if (!decors) return null
 
-    const index = sequence.decors.findIndex(decor => decor.id === decorId)
-    if (index === -1) return null
+    const decor = decors.find(d => d.id === decorId)
+    if (!decor) return null
 
-    sequence.decors[index] = { ...sequence.decors[index], ...data }
-    sequence.updatedAt = new Date()
-    return sequence.decors[index]
+    Object.assign(decor, updates)
+    this.save()
+    return decor
   }
 
   deleteDecor(sequenceId: string, decorId: string): boolean {
-    const sequence = this.getSequence(sequenceId)
-    if (!sequence) return false
+    const decors = this.decors[sequenceId]
+    if (!decors) return false
 
-    const index = sequence.decors.findIndex(decor => decor.id === decorId)
+    const index = decors.findIndex(d => d.id === decorId)
     if (index === -1) return false
 
-    // Supprimer aussi les scènes liées à ce décor
-    sequence.scenes = sequence.scenes.filter(scene => scene.decorId !== decorId)
-    sequence.decors.splice(index, 1)
-    sequence.updatedAt = new Date()
+    decors.splice(index, 1)
+
+    // Supprimer aussi les scènes associées à ce décor
+    const scenes = this.scenes[sequenceId]
+    if (scenes) {
+      this.scenes[sequenceId] = scenes.filter(scene => scene.decorId !== decorId)
+    }
+    this.save()
     return true
   }
 
-  // CRUD pour Scènes
+  // === CRUD SCÈNES ===
   createScene(sequenceId: string, data: Omit<Scene, 'id' | 'createdAt'>): Scene | null {
-    const sequence = this.getSequence(sequenceId)
-    if (!sequence) return null
-
-    // Vérifier que le décor existe
-    const decorExists = sequence.decors.some(decor => decor.id === data.decorId)
-    if (!decorExists) return null
+    if (!this.getSequence(sequenceId)) return null
 
     const newScene: Scene = {
       ...data,
@@ -239,56 +333,87 @@ class SessionDataStore {
       createdAt: new Date()
     }
 
-    sequence.scenes.push(newScene)
-    sequence.updatedAt = new Date()
+    if (!this.scenes[sequenceId]) {
+      this.scenes[sequenceId] = []
+    }
+    
+    this.scenes[sequenceId].push(newScene)
+    this.save()
     return newScene
   }
 
   getScenes(sequenceId: string): Scene[] {
-    const sequence = this.getSequence(sequenceId)
-    return sequence?.scenes || []
+    return this.scenes[sequenceId] || []
   }
 
   getScenesWithDecors(sequenceId: string): (Scene & { decor?: Decor })[] {
-    const sequence = this.getSequence(sequenceId)
-    if (!sequence) return []
-
-    return sequence.scenes.map(scene => ({
+    const scenes = this.getScenes(sequenceId)
+    const decors = this.getDecors(sequenceId)
+    
+    return scenes.map(scene => ({
       ...scene,
-      decor: sequence.decors.find(decor => decor.id === scene.decorId)
+      decor: decors.find(d => d.id === scene.decorId)
     }))
   }
 
-  updateScene(sequenceId: string, sceneId: string, data: Partial<Omit<Scene, 'id' | 'createdAt'>>): Scene | null {
-    const sequence = this.getSequence(sequenceId)
-    if (!sequence) return null
+  updateScene(sequenceId: string, sceneId: string, updates: Partial<Omit<Scene, 'id' | 'createdAt'>>): Scene | null {
+    const scenes = this.scenes[sequenceId]
+    if (!scenes) return null
 
-    const index = sequence.scenes.findIndex(scene => scene.id === sceneId)
-    if (index === -1) return null
+    const scene = scenes.find(s => s.id === sceneId)
+    if (!scene) return null
 
-    // Si on change le decorId, vérifier qu'il existe
-    if (data.decorId) {
-      const decorExists = sequence.decors.some(decor => decor.id === data.decorId)
-      if (!decorExists) return null
-    }
-
-    sequence.scenes[index] = { ...sequence.scenes[index], ...data }
-    sequence.updatedAt = new Date()
-    return sequence.scenes[index]
+    Object.assign(scene, updates)
+    this.save()
+    return scene
   }
 
   deleteScene(sequenceId: string, sceneId: string): boolean {
-    const sequence = this.getSequence(sequenceId)
-    if (!sequence) return false
+    const scenes = this.scenes[sequenceId]
+    if (!scenes) return false
 
-    const index = sequence.scenes.findIndex(scene => scene.id === sceneId)
+    const index = scenes.findIndex(s => s.id === sceneId)
     if (index === -1) return false
 
-    sequence.scenes.splice(index, 1)
-    sequence.updatedAt = new Date()
+    scenes.splice(index, 1)
+    this.save()
     return true
+  }
+
+  // === UTILITAIRES ===
+  getSequenceStats(sequenceId: string) {
+    return {
+      decorsCount: this.getDecors(sequenceId).length,
+      scenesCount: this.getScenes(sequenceId).length
+    }
+  }
+
+  getAllStats() {
+    return {
+      totalSequences: this.sequences.length,
+      totalDecors: Object.values(this.decors).flat().length,
+      totalScenes: Object.values(this.scenes).flat().length
+    }
+  }
+
+  // Debug helper
+  debugLog() {
+    console.log('=== SESSION DATA STORE DEBUG ===')
+    console.log('Current Sequence ID:', this.currentSequenceId)
+    console.log('Sequences:', this.sequences)
+    console.log('Decors by sequence:', this.decors)
+    console.log('Scenes by sequence:', this.scenes)
+    console.log('Stats:', this.getAllStats())
+  }
+
+  // Subscribe to changes (returns unsubscribe)
+  subscribe(fn: () => void) {
+    this.listeners.add(fn)
+    return () => {
+      this.listeners.delete(fn)
+    }
   }
 }
 
-// Instance singleton pour la session
+// Instance globale
 export const sessionStore = new SessionDataStore()

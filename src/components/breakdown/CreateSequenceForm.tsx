@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { sessionStore } from '@/lib/sessionData'
 import StepHeader from './StepHeader'
 import StepFooter from './StepFooter'
@@ -33,6 +34,7 @@ interface CreateSequenceFormProps {
 }
 
 export default function CreateSequenceForm({ onCancel, editMode = false, sequenceId }: CreateSequenceFormProps) {
+  const router = useRouter()
   const [currentStep, setCurrentStep] = useState<StepKey>("Général")
   const [formData, setFormData] = useState({
     code: 'SEQ-1',
@@ -79,8 +81,8 @@ export default function CreateSequenceForm({ onCancel, editMode = false, sequenc
     currentSequence: currentSequence ? {
       id: currentSequence.id,
       title: currentSequence.title,
-      decorsCount: currentSequence.decors.length,
-      scenesCount: currentSequence.scenes.length
+      decorsCount: sessionStore.getDecors(currentSequence.id).length,
+      scenesCount: sessionStore.getScenes(currentSequence.id).length
     } : 'Aucune séquence courante',
     formData
   })
@@ -136,16 +138,17 @@ export default function CreateSequenceForm({ onCancel, editMode = false, sequenc
         
         if (updatedSequence) {
           setShowSuccess(true)
+          const stats = sessionStore.getSequenceStats(updatedSequence.id)
           console.log('Séquence créée/mise à jour:', {
             ...updatedSequence,
-            totalDecors: updatedSequence.decors.length,
-            totalScenes: updatedSequence.scenes.length
+            totalDecors: stats.decorsCount,
+            totalScenes: stats.scenesCount
           })
           
-          // Simuler la sauvegarde
+          // Simuler la sauvegarde et rediriger
           setTimeout(() => {
             setShowSuccess(false)
-            alert(`Séquence "${updatedSequence.title}" créée avec succès!\n\nDétails:\n- ${updatedSequence.decors.length} décor(s)\n- ${updatedSequence.scenes.length} scène(s)\n- Code: ${updatedSequence.code}`)
+            router.push('/sequences')
           }, 1000)
         }
       } else {
@@ -168,7 +171,7 @@ export default function CreateSequenceForm({ onCancel, editMode = false, sequenc
         
         setTimeout(() => {
           setShowSuccess(false)
-          alert(`Nouvelle séquence "${newSequence.title}" créée avec succès!`)
+          router.push('/sequences')
         }, 1000)
       }
     } catch (error) {

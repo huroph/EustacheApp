@@ -17,24 +17,24 @@ export default function StepFooter({ currentIndex, total, onPrev, onNext, onSubm
   
   // Informations sur la séquence courante
   const currentSequence = sessionStore.getCurrentSequence()
-  const sequenceInfo = currentSequence ? {
-    decorsCount: currentSequence.decors.length,
-    scenesCount: currentSequence.scenes.length,
+  const sequenceStats = currentSequence ? {
+    decorsCount: sessionStore.getDecors(currentSequence.id).length,
+    scenesCount: sessionStore.getScenes(currentSequence.id).length,
     title: currentSequence.title
   } : null
 
   return (
     <div className="space-y-3">
       {/* Informations de la séquence */}
-      {isLast && sequenceInfo && (
+      {isLast && sequenceStats && (
         <div className="bg-slate-700 p-3 rounded-lg text-sm text-gray-300">
           <div className="flex items-center justify-between">
             <span className="font-medium">Résumé de la séquence:</span>
-            <span className="text-blue-400">"{sequenceInfo.title}"</span>
+            <span className="text-blue-400">"{sequenceStats.title}"</span>
           </div>
           <div className="flex items-center space-x-4 mt-2 text-xs">
-            <span>{sequenceInfo.decorsCount} décor(s)</span>
-            <span>{sequenceInfo.scenesCount} scène(s)</span>
+            <span>{sequenceStats.decorsCount} décor(s)</span>
+            <span>{sequenceStats.scenesCount} scène(s)</span>
           </div>
         </div>
       )}

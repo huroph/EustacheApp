@@ -15,10 +15,60 @@ export default function SequencesPage() {
   const [selectedSequence, setSelectedSequence] = useState<any>(null)
   const [sequences, setSequences] = useState<any[]>([])
 
-  // Charger les séquences depuis sessionStore
-  useEffect(() => {
+  // Fonction pour recharger les séquences
+  const loadSequences = () => {
     const allSequences = sessionStore.getSequences()
     setSequences(allSequences)
+    console.log('Séquences rechargées:', allSequences)
+  }
+
+  // Debug: afficher le sessionStore au montage
+  useEffect(() => {
+    console.log('=== DEBUG SEQUENCES PAGE ===')
+    sessionStore.debugLog()
+    loadSequences()
+  }, [])
+
+  // Charger les séquences depuis sessionStore
+  useEffect(() => {
+    loadSequences()
+    
+    // Recharger les séquences quand la page reprend le focus
+    const handleFocus = () => {
+      loadSequences()
+    }
+    
+    window.addEventListener('focus', handleFocus)
+    
+    return () => {
+      window.removeEventListener('focus', handleFocus)
+    }
+  }, [])
+
+  // Effet pour recharger les séquences quand on revient sur cette page
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        loadSequences()
+      }
+    }
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [])
+
+  // Subscribe to sessionStore changes so the list refreshes immediately after create/update/delete
+  useEffect(() => {
+    const unsubscribe = sessionStore.subscribe(() => {
+      loadSequences()
+    })
+
+    return () => {
+      unsubscribe()
+    }
   }, [])
 
   useEffect(() => {
@@ -41,7 +91,7 @@ export default function SequencesPage() {
 
   const handleDeleteSequence = (sequenceId: string) => {
     sessionStore.deleteSequence(sequenceId)
-    setSequences(sessionStore.getSequences())
+    loadSequences() // Recharger immédiatement
     
     // Si la séquence supprimée était sélectionnée, réinitialiser la sélection
     if (selectedSequence?.id === sequenceId) {
@@ -84,6 +134,13 @@ export default function SequencesPage() {
             <div className="flex items-center justify-between mb-4 flex-shrink-0">
               <h2 className="text-white font-semibold">Séquences</h2>
               <div className="flex items-center space-x-2">
+                <button
+                  onClick={loadSequences}
+                  className="bg-gray-700 hover:bg-gray-600 text-white text-sm rounded px-2 py-1"
+                  title="Recharger"
+                >
+                  ↻
+                </button>
                 <select className="bg-gray-800 text-white text-sm rounded px-3 py-1 border border-gray-600">
                   <option>All</option>
                   <option>EXT</option>
