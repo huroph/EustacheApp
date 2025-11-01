@@ -221,12 +221,12 @@ export default function CreateSequenceForm({ onCancel, editMode = false, sequenc
             onClose={onCancel}
           />
           {/* Bouton debug temporaire */}
-          <button
+          {/* <button
             onClick={debugSequence}
             className="ml-4 text-xs bg-yellow-600 hover:bg-yellow-700 text-white px-2 py-1 rounded"
           >
             Debug
-          </button>
+          </button> */}
         </div>
       </div>
 
