@@ -3,17 +3,17 @@
 import { useState } from 'react'
 import Button from '@/components/ui/Button'
 
-interface StepHeaderProps {
-  current: string
-  steps: readonly string[]
-  onSelect: (step: string) => void
+interface StepHeaderProps<T = string> {
+  current: T
+  steps: readonly T[]
+  onSelect: (step: T) => void
   onClose: () => void
 }
 
-export default function StepHeader({ current, steps, onSelect, onClose }: StepHeaderProps) {
+export default function StepHeader<T extends string>({ current, steps, onSelect, onClose }: StepHeaderProps<T>) {
   const [isOpen, setIsOpen] = useState(false)
 
-  const handleStepSelect = (step: string) => {
+  const handleStepSelect = (step: T) => {
     onSelect(step)
     setIsOpen(false)
   }
