@@ -19,7 +19,25 @@ interface GeneralStepProps {
   showSuccess: boolean
 }
 
+const GENERAL_SUB_STEPS = ["Informations", "Décors", "Scènes"] as const
+type GeneralSubStep = typeof GENERAL_SUB_STEPS[number]
+
+// Mock data pour les décors
+const mockDecors = [
+  { id: 1, title: "Salon moderne", address: "Studio A", manoir: "Intérieur" },
+  { id: 2, title: "Rue parisienne", address: "Ext. Paris 15e", manoir: "Extérieur" },
+  { id: 3, title: "Bureau direction", address: "Tour Montparnasse", manoir: "Intérieur" }
+]
+
+// Mock data pour les scènes
+const mockScenes = [
+  { id: 1, numero: "SQ-001", statut: "A validé", decors: "Salon moderne", manoir: "Intérieur" },
+  { id: 2, numero: "SQ-002", statut: "A validé", decors: "Rue parisienne", manoir: "Extérieur" }
+]
+
 export default function GeneralStep({ formData, setFormData, showSuccess }: GeneralStepProps) {
+  const [currentSubStep, setCurrentSubStep] = useState<GeneralSubStep>("Informations")
+
   const availableColors = [
     { id: 'blue', color: 'bg-blue-500', name: 'Bleu' },
     { id: 'green', color: 'bg-green-500', name: 'Vert' },
@@ -36,14 +54,21 @@ export default function GeneralStep({ formData, setFormData, showSuccess }: Gene
     setFormData((prev: any) => ({ ...prev, colorId }))
   }
 
-  return (
-    <div className="space-y-6">
-      {/* Section Header */}
-      <div className="space-y-2">
-        <p className="text-gray-400 text-sm">Complétez les informations de base de la séquence</p>
-        <div className="w-full h-px bg-blue-500"></div>
-      </div>
+  const renderSubStepContent = () => {
+    switch (currentSubStep) {
+      case "Informations":
+        return renderInformationsStep()
+      case "Décors":
+        return renderDecorsStep()
+      case "Scènes":
+        return renderScenesStep()
+      default:
+        return renderInformationsStep()
+    }
+  }
 
+  const renderInformationsStep = () => (
+    <div className="space-y-6">
       {showSuccess && (
         <div className="bg-green-800 text-green-100 p-3 rounded-lg">
           Séquence créée (mock) ✓
@@ -210,6 +235,178 @@ export default function GeneralStep({ formData, setFormData, showSuccess }: Gene
           </div>
         </div>
       </div>
+    </div>
+  )
+
+  const renderDecorsStep = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-gray-400 text-sm">Lieux de tournage</h3>
+        <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm flex items-center space-x-2">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+          <span>Ajouter</span>
+        </button>
+      </div>
+
+      <div className="space-y-4">
+        {mockDecors.map((decor, index) => (
+          <div key={decor.id} className="bg-slate-700 border border-slate-600 rounded-lg p-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">Titre</label>
+                <input
+                  type="text"
+                  value={decor.title}
+                  readOnly
+                  className="w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded text-white text-sm"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">Statut</label>
+                <select
+                  value="A validé"
+                  disabled
+                  className="w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded text-white text-sm"
+                >
+                  <option>A validé</option>
+                </select>
+              </div>
+
+              <div className="flex items-center justify-end">
+                <button className="text-red-400 hover:text-red-300 p-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-3">
+              <label className="block text-xs text-gray-400 mb-1">adresse</label>
+              <input
+                type="text"
+                value={decor.address}
+                readOnly
+                className="w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded text-white text-sm"
+              />
+            </div>
+
+            <div className="mt-3">
+              <label className="block text-xs text-gray-400 mb-1">Manoir</label>
+              <select
+                value={decor.manoir}
+                disabled
+                className="w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded text-white text-sm"
+              >
+                <option>{decor.manoir}</option>
+              </select>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+
+  const renderScenesStep = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-gray-400 text-sm">Scènes</h3>
+        <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm flex items-center space-x-2">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+          <span>Ajouter</span>
+        </button>
+      </div>
+
+      <div className="space-y-4">
+        {mockScenes.map((scene, index) => (
+          <div key={scene.id} className="bg-slate-700 border border-slate-600 rounded-lg p-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">Numéro</label>
+                <select
+                  value={scene.numero}
+                  disabled
+                  className="w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded text-white text-sm"
+                >
+                  <option>{scene.numero}</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">Statut</label>
+                <select
+                  value={scene.statut}
+                  disabled
+                  className="w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded text-white text-sm"
+                >
+                  <option>{scene.statut}</option>
+                </select>
+              </div>
+
+              <div className="flex items-center justify-end">
+                <button className="text-red-400 hover:text-red-300 p-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-3">
+              <label className="block text-xs text-gray-400 mb-1">Décors</label>
+              <input
+                type="text"
+                value={scene.decors}
+                readOnly
+                className="w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded text-white text-sm"
+              />
+            </div>
+
+            <div className="mt-3">
+              <label className="block text-xs text-gray-400 mb-1">Manoir</label>
+              <select
+                value={scene.manoir}
+                disabled
+                className="w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded text-white text-sm"
+              >
+                <option>{scene.manoir}</option>
+              </select>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+
+  return (
+    <div className="space-y-6">
+      {/* Sub-step Navigation */}
+      <div className="space-y-2">
+        <div className="flex space-x-1">
+          {GENERAL_SUB_STEPS.map((subStep) => (
+            <button
+              key={subStep}
+              onClick={() => setCurrentSubStep(subStep)}
+              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                currentSubStep === subStep
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-slate-700 text-gray-300 hover:bg-slate-600'
+              }`}
+            >
+              {subStep}
+            </button>
+          ))}
+        </div>
+        <div className="w-full h-px bg-blue-500"></div>
+      </div>
+
+      {/* Sub-step Content */}
+      {renderSubStepContent()}
     </div>
   )
 }
