@@ -24,6 +24,7 @@ export default function StepFooter({ currentIndex, total, onPrev, onNext, onSubm
     costumesCount: sessionStore.getCostumes(currentSequence.id).length,
     accessoiresCount: sessionStore.getAccessoires(currentSequence.id).length,
     effetsSpeciauxCount: sessionStore.getEffetsSpeciaux(currentSequence.id).length,
+    materielSonCount: sessionStore.getMaterielSon(currentSequence.id).length,
     title: currentSequence.title
   } : null
 
@@ -48,6 +49,7 @@ export default function StepFooter({ currentIndex, total, onPrev, onNext, onSubm
             <span>{sequenceStats.costumesCount} costume(s)</span>
             <span>{sequenceStats.accessoiresCount} accessoire(s)</span>
             <span>{sequenceStats.effetsSpeciauxCount} effet(s) spéciaux</span>
+            <span>{sequenceStats.materielSonCount} matériel(s) son</span>
             <span>{globalStats.equipesTechniquesCount} équipe(s) technique(s)</span>
           </div>
         </div>

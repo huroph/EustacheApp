@@ -201,7 +201,7 @@ export default function CreateSequenceForm({ onCancel, editMode = false, sequenc
       case "Équipe technique":
         return <EquipesTechniquesStep />
       case "Son":
-        return <SonStep />
+        return <SonStep sequenceId={currentSequence?.id || ''} />
       case "Machinerie":
         return <MachinerieStep />
       default:

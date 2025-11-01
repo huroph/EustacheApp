@@ -80,6 +80,15 @@ export interface EquipeTechnique {
   createdAt: Date
 }
 
+export interface MaterielSon {
+  id: string
+  nom: string
+  statut: 'A validé' | 'En attente' | 'Validé' | 'Reporté'
+  referentId: string // ID de l'équipe technique référente
+  notes: string
+  createdAt: Date
+}
+
 export interface SequenceFormData {
   id: string
   code: string
@@ -105,6 +114,7 @@ class SessionDataStore {
   private accessoires: Record<string, Accessoire[]> = {} // sequenceId -> Accessoire[]
   private effetsSpeciaux: Record<string, EffetSpecial[]> = {} // sequenceId -> EffetSpecial[]
   private equipesTechniques: EquipeTechnique[] = [] // Global, pas par séquence
+  private materielSon: Record<string, MaterielSon[]> = {} // sequenceId -> MaterielSon[]
   private currentSequenceId: string | null = null
   private listeners: Set<() => void> = new Set()
 
@@ -257,6 +267,17 @@ class SessionDataStore {
         createdAt: new Date()
       }
     ]
+
+    this.materielSon[defaultSequence.id] = [
+      {
+        id: 'materiel-1',
+        nom: 'Perche Rode NTG3',
+        statut: 'A validé',
+        referentId: 'equipe-1', // Paul Rodriguez
+        notes: '',
+        createdAt: new Date()
+      }
+    ]
   }
 
   // Persist in sessionStorage
@@ -271,6 +292,7 @@ class SessionDataStore {
         accessoires: this.accessoires,
         effetsSpeciaux: this.effetsSpeciaux,
         equipesTechniques: this.equipesTechniques,
+        materielSon: this.materielSon,
         currentSequenceId: this.currentSequenceId
       }
       if (typeof window !== 'undefined' && window.sessionStorage) {
@@ -309,6 +331,7 @@ class SessionDataStore {
         this.costumes = {}
         this.accessoires = {}
         this.effetsSpeciaux = {}
+        this.materielSon = {}
 
         // Normalize sequences and extract decors/scenes per sequence
         this.sequences = parsed.sequences.map((s: any) => {
@@ -332,8 +355,11 @@ class SessionDataStore {
           if (Array.isArray(s.effetsSpeciaux) && s.effetsSpeciaux.length > 0) {
             this.effetsSpeciaux[seqId] = s.effetsSpeciaux.map((e: any) => ({ ...e, createdAt: new Date(e.createdAt) }))
           }
+          if (Array.isArray(s.materielSon) && s.materielSon.length > 0) {
+            this.materielSon[seqId] = s.materielSon.map((m: any) => ({ ...m, createdAt: new Date(m.createdAt) }))
+          }
 
-          // fallback to parsed.decors / parsed.scenes / parsed.roles / parsed.costumes / parsed.accessoires / parsed.effetsSpeciaux maps
+          // fallback to parsed.decors / parsed.scenes / parsed.roles / parsed.costumes / parsed.accessoires / parsed.effetsSpeciaux / parsed.materielSon maps
           if (!this.decors[seqId] && parsed.decors && parsed.decors[seqId]) {
             this.decors[seqId] = (parsed.decors[seqId] || []).map((d: any) => ({ ...d, createdAt: new Date(d.createdAt) }))
           }
@@ -351,6 +377,9 @@ class SessionDataStore {
           }
           if (!this.effetsSpeciaux[seqId] && parsed.effetsSpeciaux && parsed.effetsSpeciaux[seqId]) {
             this.effetsSpeciaux[seqId] = (parsed.effetsSpeciaux[seqId] || []).map((e: any) => ({ ...e, createdAt: new Date(e.createdAt) }))
+          }
+          if (!this.materielSon[seqId] && parsed.materielSon && parsed.materielSon[seqId]) {
+            this.materielSon[seqId] = (parsed.materielSon[seqId] || []).map((m: any) => ({ ...m, createdAt: new Date(m.createdAt) }))
           }
 
           return {
@@ -380,7 +409,7 @@ class SessionDataStore {
           this.equipesTechniques = []
         }
 
-        // ensure decors/scenes/roles/costumes/accessoires/effetsSpeciaux maps exist for each sequence
+        // ensure decors/scenes/roles/costumes/accessoires/effetsSpeciaux/materielSon maps exist for each sequence
         this.sequences.forEach((seq) => {
           if (!this.decors[seq.id]) this.decors[seq.id] = []
           if (!this.scenes[seq.id]) this.scenes[seq.id] = []
@@ -388,6 +417,7 @@ class SessionDataStore {
           if (!this.costumes[seq.id]) this.costumes[seq.id] = []
           if (!this.accessoires[seq.id]) this.accessoires[seq.id] = []
           if (!this.effetsSpeciaux[seq.id]) this.effetsSpeciaux[seq.id] = []
+          if (!this.materielSon[seq.id]) this.materielSon[seq.id] = []
         })
 
         this.currentSequenceId = parsed.currentSequenceId || (this.sequences[0] && this.sequences[0].id) || null
@@ -833,6 +863,47 @@ class SessionDataStore {
     if (index === -1) return false
     
     this.equipesTechniques.splice(index, 1)
+    this.save()
+    return true
+  }
+
+  // CRUD methods for MaterielSon (per sequence)
+  createMaterielSon(sequenceId: string, materielDataWithoutId: Omit<MaterielSon, 'id' | 'createdAt'>): MaterielSon {
+    const materiel: MaterielSon = {
+      id: `materiel-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      ...materielDataWithoutId,
+      createdAt: new Date()
+    }
+    
+    if (!this.materielSon[sequenceId]) {
+      this.materielSon[sequenceId] = []
+    }
+    this.materielSon[sequenceId].push(materiel)
+    this.save()
+    return materiel
+  }
+
+  getMaterielSon(sequenceId: string): MaterielSon[] {
+    return this.materielSon[sequenceId] || []
+  }
+
+  updateMaterielSon(sequenceId: string, materielId: string, updates: Partial<Omit<MaterielSon, 'id' | 'createdAt'>>): MaterielSon | null {
+    const materiels = this.materielSon[sequenceId] || []
+    const index = materiels.findIndex(m => m.id === materielId)
+    if (index === -1) return null
+    
+    const updated = { ...materiels[index], ...updates }
+    this.materielSon[sequenceId][index] = updated
+    this.save()
+    return updated
+  }
+
+  deleteMaterielSon(sequenceId: string, materielId: string): boolean {
+    const materiels = this.materielSon[sequenceId] || []
+    const index = materiels.findIndex(m => m.id === materielId)
+    if (index === -1) return false
+    
+    this.materielSon[sequenceId].splice(index, 1)
     this.save()
     return true
   }
