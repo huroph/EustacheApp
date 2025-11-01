@@ -29,10 +29,10 @@ export default function BreakdownPage() {
     return null
   }
   return (
-    <div className="min-h-screen bg-gray-900 p-6">
-      <div className="max-w-6xl mx-auto">
+    <div className="h-full bg-gray-900 p-6 flex flex-col overflow-y-hidden">
+      <div className="max-w-6xl mx-auto w-full flex flex-col h-full overflow-y-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-8 flex-shrink-0">
           <div className="flex items-center space-x-4">
             <Badge>👑</Badge>
             <h1 className="text-2xl font-bold text-white">Dépouillement</h1>
@@ -45,9 +45,9 @@ export default function BreakdownPage() {
         </div>
 
         {/* Main content grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Script viewer (left side) */}
-          <div className="bg-white rounded-lg p-6 h-[600px] overflow-y-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 flex-1 min-h-0 overflow-y-hidden">
+          {/* Script viewer (left side) - Scrollable */}
+          <div className="bg-white rounded-lg p-6 overflow-y-auto">
             <div className="space-y-4 text-sm">
               <div className="font-bold text-center text-lg mb-6">DEUX PAS SUR TERRE</div>
               
@@ -88,8 +88,8 @@ export default function BreakdownPage() {
           </div>
 
           {/* Actions panel (right side) */}
-          <div className="space-y-6">
-            <div className="bg-gray-800 rounded-lg p-6">
+          <div className="space-y-6 flex flex-col overflow-y-hidden">
+            <div className="bg-gray-800 rounded-lg p-6 flex-shrink-0">
               <h2 className="text-white text-lg font-semibold mb-4">Actions</h2>
               
               <Button variant="default" className="w-full mb-4">
@@ -102,7 +102,7 @@ export default function BreakdownPage() {
             </div>
 
             {/* Additional info panel */}
-            <div className="bg-gray-800 rounded-lg p-6">
+            <div className="bg-gray-800 rounded-lg p-6 flex-shrink-0">
               <h3 className="text-white text-lg font-semibold mb-4">Informations</h3>
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">

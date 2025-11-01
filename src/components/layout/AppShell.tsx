@@ -25,14 +25,14 @@ export default function AppShell({ children }: AppShellProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900">
+    <div className="h-screen bg-gray-900 overflow-y-hidden flex flex-col">
       {/* Header */}
       <Header 
         onToggleSidebar={handleToggle}
         sidebarCollapsed={isCollapsed}
       />
 
-      <div className="flex">
+      <div className="flex flex-1 min-h-0 overflow-y-hidden">
         {/* Sidebar */}
         <Sidebar 
           isCollapsed={isCollapsed}
@@ -41,15 +41,14 @@ export default function AppShell({ children }: AppShellProps) {
         />
 
         {/* Contenu principal */}
-              {/* Contenu principal */}
-      <main
-        className={cn(
-          'transition-all duration-300 pt-16', // pt-16 pour compenser le header sticky
-          'md:pl-64', // Largeur sidebar étendue par défaut
-          isCollapsed && 'md:pl-16' // Largeur sidebar réduite
-        )}
-      >
-          <div className="container mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <main
+          className={cn(
+            'flex-1 transition-all duration-300 overflow-y-hidden',
+            'md:ml-64', // Marge sidebar étendue par défaut
+            isCollapsed && 'md:ml-16' // Marge sidebar réduite
+          )}
+        >
+          <div className="h-full overflow-y-hidden">
             {children}
           </div>
         </main>
