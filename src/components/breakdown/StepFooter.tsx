@@ -20,6 +20,7 @@ export default function StepFooter({ currentIndex, total, onPrev, onNext, onSubm
   const sequenceStats = currentSequence ? {
     decorsCount: sessionStore.getDecors(currentSequence.id).length,
     scenesCount: sessionStore.getScenes(currentSequence.id).length,
+    rolesCount: sessionStore.getRoles(currentSequence.id).length,
     title: currentSequence.title
   } : null
 
@@ -35,6 +36,7 @@ export default function StepFooter({ currentIndex, total, onPrev, onNext, onSubm
           <div className="flex items-center space-x-4 mt-2 text-xs">
             <span>{sequenceStats.decorsCount} décor(s)</span>
             <span>{sequenceStats.scenesCount} scène(s)</span>
+            <span>{sequenceStats.rolesCount} rôle(s)</span>
           </div>
         </div>
       )}

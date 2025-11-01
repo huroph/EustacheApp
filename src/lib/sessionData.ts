@@ -18,6 +18,32 @@ export interface Scene {
   createdAt: Date
 }
 
+export interface Role {
+  id: string
+  type: 'Principale' | 'Secondaire' | 'Figurant' | 'Voix Off'
+  nomRole: string
+  interpreteNom: string
+  interpretePrenom: string
+  genre: 'Masculin' | 'Féminin' | 'Autre'
+  agePersonnage: string
+  apparence: string
+  description: string
+  notesSequence: string
+  // Contact
+  adresse: string
+  email: string
+  telephone: string
+  // Doublure
+  doublureNom?: string
+  doublurePrenom?: string
+  doublureType?: 'Image' | 'Voix' | 'Cascades'
+  doublureAdresse?: string
+  doublureEmail?: string
+  doublureTelephone?: string
+  doublureNotes?: string
+  createdAt: Date
+}
+
 export interface SequenceFormData {
   id: string
   code: string
@@ -38,6 +64,7 @@ class SessionDataStore {
   private sequences: SequenceFormData[] = []
   private decors: Record<string, Decor[]> = {} // sequenceId -> Decor[]
   private scenes: Record<string, Scene[]> = {} // sequenceId -> Scene[]
+  private roles: Record<string, Role[]> = {} // sequenceId -> Role[]
   private currentSequenceId: string | null = null
   private listeners: Set<() => void> = new Set()
 
@@ -111,6 +138,32 @@ class SessionDataStore {
         createdAt: new Date()
       }
     ]
+
+    this.roles[defaultSequence.id] = [
+      {
+        id: 'role-1',
+        type: 'Principale',
+        nomRole: 'Claire Dubois',
+        interpreteNom: 'Martin',
+        interpretePrenom: 'Justine',
+        genre: 'Féminin',
+        agePersonnage: '38 ans',
+        apparence: 'Médecin urgentiste brillant mais tourmenté par un drame personne',
+        description: 'Médecin urgentiste brillant mais tourmenté par un drame personne',
+        notesSequence: 'Médecin urgentiste brillant mais tourmenté par un drame personne',
+        adresse: '39 rue des long prets 94100, PARIS',
+        email: 'Claire.DUBOIS@gmail.com',
+        telephone: '+33070707007',
+        doublureNom: 'Bonner',
+        doublurePrenom: 'Fleurs',
+        doublureType: 'Image',
+        doublureAdresse: '39 rue des long prets 94100, PARIS',
+        doublureEmail: 'Claire.DUBOIS@gmail.com',
+        doublureTelephone: '+33070707007',
+        doublureNotes: 'Médecin urgentiste brillant mais tourmenté par un drame personne',
+        createdAt: new Date()
+      }
+    ]
   }
 
   // Persist in sessionStorage
@@ -120,6 +173,7 @@ class SessionDataStore {
         sequences: this.sequences,
         decors: this.decors,
         scenes: this.scenes,
+        roles: this.roles,
         currentSequenceId: this.currentSequenceId
       }
       if (typeof window !== 'undefined' && window.sessionStorage) {
@@ -154,6 +208,7 @@ class SessionDataStore {
         // Support legacy payloads where decors/scenes were nested inside sequences
         this.decors = {}
         this.scenes = {}
+        this.roles = {}
 
         // Normalize sequences and extract decors/scenes per sequence
         this.sequences = parsed.sequences.map((s: any) => {
@@ -165,13 +220,19 @@ class SessionDataStore {
           if (Array.isArray(s.scenes) && s.scenes.length > 0) {
             this.scenes[seqId] = s.scenes.map((sc: any) => ({ ...sc, createdAt: new Date(sc.createdAt) }))
           }
+          if (Array.isArray(s.roles) && s.roles.length > 0) {
+            this.roles[seqId] = s.roles.map((r: any) => ({ ...r, createdAt: new Date(r.createdAt) }))
+          }
 
-          // fallback to parsed.decors / parsed.scenes maps
+          // fallback to parsed.decors / parsed.scenes / parsed.roles maps
           if (!this.decors[seqId] && parsed.decors && parsed.decors[seqId]) {
             this.decors[seqId] = (parsed.decors[seqId] || []).map((d: any) => ({ ...d, createdAt: new Date(d.createdAt) }))
           }
           if (!this.scenes[seqId] && parsed.scenes && parsed.scenes[seqId]) {
             this.scenes[seqId] = (parsed.scenes[seqId] || []).map((sc: any) => ({ ...sc, createdAt: new Date(sc.createdAt) }))
+          }
+          if (!this.roles[seqId] && parsed.roles && parsed.roles[seqId]) {
+            this.roles[seqId] = (parsed.roles[seqId] || []).map((r: any) => ({ ...r, createdAt: new Date(r.createdAt) }))
           }
 
           return {
@@ -191,10 +252,11 @@ class SessionDataStore {
           }
         })
 
-        // ensure decors/scenes maps exist for each sequence
+        // ensure decors/scenes/roles maps exist for each sequence
         this.sequences.forEach((seq) => {
           if (!this.decors[seq.id]) this.decors[seq.id] = []
           if (!this.scenes[seq.id]) this.scenes[seq.id] = []
+          if (!this.roles[seq.id]) this.roles[seq.id] = []
         })
 
         this.currentSequenceId = parsed.currentSequenceId || (this.sequences[0] && this.sequences[0].id) || null
@@ -219,6 +281,7 @@ class SessionDataStore {
     // Initialiser les collections pour cette séquence
     this.decors[newSequence.id] = []
     this.scenes[newSequence.id] = []
+    this.roles[newSequence.id] = []
     this.save()
     return newSequence
   }
@@ -258,9 +321,10 @@ class SessionDataStore {
 
     this.sequences.splice(index, 1)
     
-    // Nettoyer les décors et scènes associés
+    // Nettoyer les décors, scènes et rôles associés
     delete this.decors[id]
     delete this.scenes[id]
+    delete this.roles[id]
     
     // Réinitialiser la séquence courante si c'était celle supprimée
     if (this.currentSequenceId === id) {
@@ -380,11 +444,59 @@ class SessionDataStore {
     return true
   }
 
+  // === CRUD RÔLES ===
+  createRole(sequenceId: string, data: Omit<Role, 'id' | 'createdAt'>): Role | null {
+    if (!this.getSequence(sequenceId)) return null
+
+    const newRole: Role = {
+      ...data,
+      id: `role-${Date.now()}`,
+      createdAt: new Date()
+    }
+
+    if (!this.roles[sequenceId]) {
+      this.roles[sequenceId] = []
+    }
+    
+    this.roles[sequenceId].push(newRole)
+    this.save()
+    return newRole
+  }
+
+  getRoles(sequenceId: string): Role[] {
+    return this.roles[sequenceId] || []
+  }
+
+  updateRole(sequenceId: string, roleId: string, updates: Partial<Omit<Role, 'id' | 'createdAt'>>): Role | null {
+    const roles = this.roles[sequenceId]
+    if (!roles) return null
+
+    const role = roles.find(r => r.id === roleId)
+    if (!role) return null
+
+    Object.assign(role, updates)
+    this.save()
+    return role
+  }
+
+  deleteRole(sequenceId: string, roleId: string): boolean {
+    const roles = this.roles[sequenceId]
+    if (!roles) return false
+
+    const index = roles.findIndex(r => r.id === roleId)
+    if (index === -1) return false
+
+    roles.splice(index, 1)
+    this.save()
+    return true
+  }
+
   // === UTILITAIRES ===
   getSequenceStats(sequenceId: string) {
     return {
       decorsCount: this.getDecors(sequenceId).length,
-      scenesCount: this.getScenes(sequenceId).length
+      scenesCount: this.getScenes(sequenceId).length,
+      rolesCount: this.getRoles(sequenceId).length
     }
   }
 
@@ -392,7 +504,8 @@ class SessionDataStore {
     return {
       totalSequences: this.sequences.length,
       totalDecors: Object.values(this.decors).flat().length,
-      totalScenes: Object.values(this.scenes).flat().length
+      totalScenes: Object.values(this.scenes).flat().length,
+      totalRoles: Object.values(this.roles).flat().length
     }
   }
 
@@ -403,6 +516,7 @@ class SessionDataStore {
     console.log('Sequences:', this.sequences)
     console.log('Decors by sequence:', this.decors)
     console.log('Scenes by sequence:', this.scenes)
+    console.log('Roles by sequence:', this.roles)
     console.log('Stats:', this.getAllStats())
   }
 
