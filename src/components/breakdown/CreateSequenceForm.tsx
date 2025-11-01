@@ -99,28 +99,32 @@ export default function CreateSequenceForm({ onCancel }: CreateSequenceFormProps
   }
 
   return (
-    <div className="bg-slate-800 p-4 md:p-6 rounded-lg space-y-6 h-full overflow-y-auto">
+    <div className="bg-slate-800 rounded-lg h-full flex flex-col">
       {/* Header */}
-      <StepHeader
-        current={currentStep}
-        steps={STEPS}
-        onSelect={goTo}
-        onClose={onCancel}
-      />
+      <div className="flex-shrink-0 p-4 md:p-6 border-b border-slate-600">
+        <StepHeader
+          current={currentStep}
+          steps={STEPS}
+          onSelect={goTo}
+          onClose={onCancel}
+        />
+      </div>
 
-      {/* Content */}
-      <div className="min-h-[300px]">
+      {/* Content - Scrollable */}
+      <div className="flex-1 overflow-y-auto p-4 md:p-6">
         {renderStepContent()}
       </div>
 
       {/* Footer */}
-      <StepFooter
-        currentIndex={currentIndex}
-        total={STEPS.length}
-        onPrev={goPrev}
-        onNext={goNext}
-        onSubmit={handleSubmit}
-      />
+      <div className="flex-shrink-0 p-4 md:p-6 border-t border-slate-600">
+        <StepFooter
+          currentIndex={currentIndex}
+          total={STEPS.length}
+          onPrev={goPrev}
+          onNext={goNext}
+          onSubmit={handleSubmit}
+        />
+      </div>
     </div>
   )
 }

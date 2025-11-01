@@ -15,7 +15,7 @@ export default function StepFooter({ currentIndex, total, onPrev, onNext, onSubm
   const isLast = currentIndex === total - 1
 
   return (
-    <div className="flex items-center justify-between pt-6 border-t border-slate-600">
+    <div className="flex items-center justify-between ">
       <div className="flex items-center space-x-4">
         <Button 
           type="button" 
