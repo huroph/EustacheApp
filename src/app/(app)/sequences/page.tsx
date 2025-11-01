@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCurrentProject } from '@/lib/currentProject'
-import { sequences } from '@/mock/data'
+import { sessionStore } from '@/lib/sessionData'
 import SequenceCard from '@/components/sequences/SequenceCard'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
@@ -13,9 +13,13 @@ export default function SequencesPage() {
   const router = useRouter()
   const { project, isLoading } = useCurrentProject()
   const [selectedSequence, setSelectedSequence] = useState<any>(null)
+  const [sequences, setSequences] = useState<any[]>([])
 
-  // Récupérer les séquences du projet sélectionné
-  const projectSequences = project ? sequences[project.id as keyof typeof sequences] || [] : []
+  // Charger les séquences depuis sessionStore
+  useEffect(() => {
+    const allSequences = sessionStore.getSequences()
+    setSequences(allSequences)
+  }, [])
 
   useEffect(() => {
     if (!isLoading && !project) {
@@ -25,10 +29,30 @@ export default function SequencesPage() {
 
   // Initialiser la première séquence sélectionnée quand les données changent
   useEffect(() => {
-    if (projectSequences.length > 0 && !selectedSequence) {
-      setSelectedSequence(projectSequences[0])
+    if (sequences.length > 0 && !selectedSequence) {
+      setSelectedSequence(sequences[0])
     }
-  }, [projectSequences, selectedSequence])
+  }, [sequences, selectedSequence])
+
+  const handleEditSequence = (sequence: any) => {
+    // Rediriger vers la page de création/modification avec l'ID de la séquence
+    router.push(`/breakdown?edit=${sequence.id}`)
+  }
+
+  const handleDeleteSequence = (sequenceId: string) => {
+    sessionStore.deleteSequence(sequenceId)
+    setSequences(sessionStore.getSequences())
+    
+    // Si la séquence supprimée était sélectionnée, réinitialiser la sélection
+    if (selectedSequence?.id === sequenceId) {
+      const remainingSequences = sessionStore.getSequences()
+      setSelectedSequence(remainingSequences.length > 0 ? remainingSequences[0] : null)
+    }
+  }
+
+  const handleCreateSequence = () => {
+    router.push('/breakdown')
+  }
 
   if (isLoading) {
     return (
@@ -69,20 +93,34 @@ export default function SequencesPage() {
                   <option>Recent</option>
                   <option>Oldest</option>
                 </select>
+                <Button variant="outline" size="sm" onClick={handleCreateSequence}>
+                  + Créer
+                </Button>
               </div>
             </div>
             
-            <p className="text-gray-400 text-sm mb-4">{projectSequences.length} résultat{projectSequences.length > 1 ? 's' : ''}</p>
+            <p className="text-gray-400 text-sm mb-4">{sequences.length} résultat{sequences.length > 1 ? 's' : ''}</p>
 
             <div className="space-y-3 flex-1 overflow-y-auto pr-2">
-              {projectSequences.map((sequence, index) => (
+              {sequences.map((sequence) => (
                 <SequenceCard
                   key={sequence.id}
                   sequence={sequence}
                   onClick={() => setSelectedSequence(sequence)}
                   isSelected={selectedSequence?.id === sequence.id}
+                  onEdit={handleEditSequence}
+                  onDelete={handleDeleteSequence}
                 />
               ))}
+              
+              {sequences.length === 0 && (
+                <div className="text-center py-8 text-gray-400">
+                  <p className="mb-4">Aucune séquence créée</p>
+                  <Button onClick={handleCreateSequence}>
+                    Créer ma première séquence
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
 
@@ -94,15 +132,23 @@ export default function SequencesPage() {
                 <div className="flex items-start justify-between">
                   <div>
                     <div className="flex items-center space-x-2 mb-2">
-                      <span className="text-yellow-400 text-sm">Seq.1</span>
-                      <Badge>À préparer</Badge>
+                      <span className="text-yellow-400 text-sm">{selectedSequence.code}</span>
+                      <Badge>{selectedSequence.status}</Badge>
+                      <Badge>{selectedSequence.type}</Badge>
+                      <Badge>{selectedSequence.effet}</Badge>
                     </div>
                     <h2 className="text-2xl font-bold text-white mb-2">
-                      Confrontation dans le manoire
+                      {selectedSequence.title}
                     </h2>
-                    <p className="text-gray-400 text-sm">20/8/25</p>
+                    <p className="text-gray-400 text-sm">
+                      {selectedSequence.createdAt && new Date(selectedSequence.createdAt).toLocaleDateString('fr-FR')}
+                    </p>
                   </div>
-                  <Button variant="outline" size="sm">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleEditSequence(selectedSequence)}
+                  >
                     Modifier
                   </Button>
                 </div>
@@ -124,84 +170,82 @@ export default function SequencesPage() {
                   {/* Left column */}
                   <div className="space-y-4">
                     <div>
-                      <h4 className="text-white font-medium mb-2">Décor :</h4>
+                      <h4 className="text-white font-medium mb-2">Localisation :</h4>
                       <div className="flex items-center space-x-2">
-                        <span className="text-gray-300">Manoir Dubois - Salon principal</span>
-                        <Badge>INT</Badge>
-                        <Badge>JOUR</Badge>
+                        <span className="text-gray-300">{selectedSequence.location || 'Non défini'}</span>
+                        <Badge>{selectedSequence.type}</Badge>
+                        <Badge>{selectedSequence.effet}</Badge>
                       </div>
-                    </div>
-
-                    <div>
-                      <h4 className="text-white font-medium mb-2">Lieux de tournages :</h4>
-                      <p className="text-gray-300 text-sm">
-                        12 Impasse Bompard, 13100 MARSEILLE
-                      </p>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <h4 className="text-white font-medium mb-2">E.T.T. (hh:mm) :</h4>
-                        <p className="text-blue-400 font-semibold">1h20</p>
+                        <p className="text-blue-400 font-semibold">{selectedSequence.ett || 'Non défini'}</p>
                       </div>
                       <div>
                         <h4 className="text-white font-medium mb-2">Pré-minutage (mm:ss) :</h4>
-                        <p className="text-blue-400 font-semibold">1:20 min</p>
+                        <p className="text-blue-400 font-semibold">{selectedSequence.preMintage || 'Non défini'}</p>
                       </div>
                     </div>
 
                     <div>
                       <h4 className="text-white font-medium mb-2">Résumé :</h4>
                       <p className="text-gray-300 text-sm leading-relaxed">
-                        Une rue commerçante. Passants, vélos, poussettes. Un MIMÉE (mime) statue vivante. 
-                        Un CHIEN renifle une borne de parking. Des panneaux incompréhensibles... p...
+                        {selectedSequence.summary || 'Aucun résumé disponible'}
                       </p>
+                    </div>
+
+                    {/* Décors et scènes */}
+                    <div>
+                      <h4 className="text-white font-medium mb-2">Décors :</h4>
+                      <div className="space-y-2">
+                        {sessionStore.getDecors(selectedSequence.id).map((decor) => (
+                          <div key={decor.id} className="bg-gray-700 rounded p-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-gray-300 text-sm">{decor.title}</span>
+                              <Badge>{decor.manoir}</Badge>
+                            </div>
+                            {decor.address && (
+                              <p className="text-gray-400 text-xs mt-1">{decor.address}</p>
+                            )}
+                          </div>
+                        ))}
+                        {sessionStore.getDecors(selectedSequence.id).length === 0 && (
+                          <p className="text-gray-400 text-sm">Aucun décor défini</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <h4 className="text-white font-medium mb-2">Scènes :</h4>
+                      <div className="space-y-2">
+                        {sessionStore.getScenes(selectedSequence.id).map((scene) => (
+                          <div key={scene.id} className="bg-gray-700 rounded p-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-gray-300 text-sm">Scène {scene.numero}</span>
+                              <Badge>{scene.status}</Badge>
+                            </div>
+                            {scene.description && (
+                              <p className="text-gray-400 text-xs mt-1">{scene.description}</p>
+                            )}
+                          </div>
+                        ))}
+                        {sessionStore.getScenes(selectedSequence.id).length === 0 && (
+                          <p className="text-gray-400 text-sm">Aucune scène définie</p>
+                        )}
+                      </div>
                     </div>
                   </div>
 
-                  {/* Right column - Team sections */}
+                  {/* Right column - Placeholder for future features */}
                   <div className="space-y-4">
                     <div>
-                      <h4 className="text-white font-medium mb-3">Equipe et Roles</h4>
-                      
-                      <div className="bg-gray-700 rounded-lg p-4 mb-4">
-                        <div className="flex items-center space-x-3 mb-3">
-                          <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
-                            <span className="text-white text-sm">👤</span>
-                          </div>
-                          <div>
-                            <p className="text-white font-medium">Fumée atmosphérique</p>
-                            <p className="text-gray-400 text-sm">Machine Hazer</p>
-                          </div>
-                        </div>
+                      <h4 className="text-white font-medium mb-3">Équipe et Rôles</h4>
+                      <div className="text-center text-gray-400 py-8">
+                        <p>Fonctionnalité à venir</p>
+                        <p className="text-sm mt-2">Gestion d'équipe, acteurs, costumes...</p>
                       </div>
-
-                      {/* Role tabs */}
-                      <div className="flex space-x-4 mb-4">
-                        {['Acteurs', 'Silhouette / Figu', 'Equipe', 'Autres'].map((role) => (
-                          <button
-                            key={role}
-                            className="text-gray-400 text-sm hover:text-white"
-                          >
-                            {role}
-                          </button>
-                        ))}
-                      </div>
-
-                      <div className="flex space-x-4 mb-4">
-                        {['Costumes', 'Accessoires', 'Equipe', 'Note'].map((category) => (
-                          <button
-                            key={category}
-                            className="text-gray-400 text-sm hover:text-white"
-                          >
-                            {category}
-                          </button>
-                        ))}
-                      </div>
-
-                      <Button variant="outline" size="sm" className="w-full">
-                        + Ajouter
-                      </Button>
                     </div>
                   </div>
                 </div>

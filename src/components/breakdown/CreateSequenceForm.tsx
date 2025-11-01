@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { sessionStore } from '@/lib/sessionData'
 import StepHeader from './StepHeader'
 import StepFooter from './StepFooter'
@@ -28,9 +28,11 @@ type StepKey = typeof STEPS[number]
 
 interface CreateSequenceFormProps {
   onCancel: () => void
+  editMode?: boolean
+  sequenceId?: string
 }
 
-export default function CreateSequenceForm({ onCancel }: CreateSequenceFormProps) {
+export default function CreateSequenceForm({ onCancel, editMode = false, sequenceId }: CreateSequenceFormProps) {
   const [currentStep, setCurrentStep] = useState<StepKey>("Général")
   const [formData, setFormData] = useState({
     code: 'SEQ-1',
@@ -45,6 +47,28 @@ export default function CreateSequenceForm({ onCancel }: CreateSequenceFormProps
     type: 'INT'
   })
   const [showSuccess, setShowSuccess] = useState(false)
+
+  // Charger les données en mode édition
+  useEffect(() => {
+    if (editMode && sequenceId) {
+      const sequence = sessionStore.getSequence(sequenceId)
+      if (sequence) {
+        sessionStore.setCurrentSequence(sequence.id)
+        setFormData({
+          code: sequence.code,
+          title: sequence.title,
+          colorId: sequence.colorId,
+          status: sequence.status,
+          location: sequence.location,
+          summary: sequence.summary,
+          preMintage: sequence.preMintage,
+          ett: sequence.ett,
+          effet: sequence.effet,
+          type: sequence.type
+        })
+      }
+    }
+  }, [editMode, sequenceId])
 
   const currentIndex = STEPS.indexOf(currentStep)
 
