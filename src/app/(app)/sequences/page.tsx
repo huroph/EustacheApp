@@ -4,54 +4,31 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCurrentProject } from '@/lib/currentProject'
+import { sequences } from '@/mock/data'
 import SequenceCard from '@/components/sequences/SequenceCard'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 
-// Mock sequences data
-const sequences = [
-  {
-    id: 'seq-1',
-    code: 'SEQ-1',
-    tags: ['EXT', 'JOUR'],
-    title: 'Confrontation dans le manoir',
-    time: '1h30',
-    summary:
-      "Une rue commerçante. Passants, vélos, poussettes. Un MIMÉE (mime) statue vivante. Un CHIEN renifle une borne de parking. Des panneaux incompréhensibles...",
-    roles: ['Acteurs', 'Equipe', 'Silhouette'],
-  },
-  {
-    id: 'seq-2',
-    code: 'SEQ-2',
-    tags: ['INT', 'NUIT'],
-    title: 'Discussion secrète',
-    time: '45min',
-    summary:
-      "Dans un bureau sombre, deux personnages se rencontrent pour échanger des informations cruciales. L'atmosphère est tendue...",
-    roles: ['Acteurs', 'Equipe'],
-  },
-  {
-    id: 'seq-3',
-    code: 'SEQ-3',
-    tags: ['EXT', 'NUIT'],
-    title: 'Poursuite nocturne',
-    time: '2h15',
-    summary:
-      "Une course-poursuite effrénée dans les rues de la ville. Voitures, motos, et action pure...",
-    roles: ['Acteurs', 'Equipe', 'Cascadeurs', 'Silhouette'],
-  },
-]
-
 export default function SequencesPage() {
   const router = useRouter()
   const { project, isLoading } = useCurrentProject()
-  const [selectedSequence, setSelectedSequence] = useState(sequences[0])
+  const [selectedSequence, setSelectedSequence] = useState<any>(null)
+
+  // Récupérer les séquences du projet sélectionné
+  const projectSequences = project ? sequences[project.id as keyof typeof sequences] || [] : []
 
   useEffect(() => {
     if (!isLoading && !project) {
       router.push('/projects')
     }
   }, [project, isLoading, router])
+
+  // Initialiser la première séquence sélectionnée quand les données changent
+  useEffect(() => {
+    if (projectSequences.length > 0 && !selectedSequence) {
+      setSelectedSequence(projectSequences[0])
+    }
+  }, [projectSequences, selectedSequence])
 
   if (isLoading) {
     return (
@@ -95,20 +72,15 @@ export default function SequencesPage() {
               </div>
             </div>
             
-            <p className="text-gray-400 text-sm mb-4">3 resultat</p>
+            <p className="text-gray-400 text-sm mb-4">{projectSequences.length} résultat{projectSequences.length > 1 ? 's' : ''}</p>
 
             <div className="space-y-3 flex-1 overflow-y-auto pr-2">
-              {/* Repeat the sequence 3 times with slight variations */}
-              {[...Array(3)].map((_, index) => (
+              {projectSequences.map((sequence, index) => (
                 <SequenceCard
-                  key={`seq-${index}`}
-                  sequence={{
-                    ...sequences[0],
-                    id: `seq-${index + 1}`,
-                    code: `SEQ-${index + 1}`,
-                  }}
-                  onClick={() => setSelectedSequence(sequences[0])}
-                  isSelected={selectedSequence?.id === sequences[0].id}
+                  key={sequence.id}
+                  sequence={sequence}
+                  onClick={() => setSelectedSequence(sequence)}
+                  isSelected={selectedSequence?.id === sequence.id}
                 />
               ))}
             </div>

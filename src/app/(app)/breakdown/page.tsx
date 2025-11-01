@@ -4,12 +4,16 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCurrentProject } from '@/lib/currentProject'
+import { sequences } from '@/mock/data'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 
 export default function BreakdownPage() {
   const router = useRouter()
   const { project, isLoading } = useCurrentProject()
+
+  // Récupérer les séquences du projet sélectionné pour le comptage
+  const projectSequences = project ? sequences[project.id as keyof typeof sequences] || [] : []
 
   useEffect(() => {
     if (!isLoading && !project) {
@@ -47,42 +51,54 @@ export default function BreakdownPage() {
         {/* Main content grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 flex-1 min-h-0 overflow-y-hidden">
           {/* Script viewer (left side) - Scrollable */}
-          <div className="bg-white rounded-lg p-6 overflow-y-auto">
+          <div className="bg-white rounded-lg p-6 overflow-y-auto shadow-lg">
             <div className="space-y-4 text-sm">
-              <div className="font-bold text-center text-lg mb-6">DEUX PAS SUR TERRE</div>
+              <div className="font-bold text-center text-xl mb-6 text-gray-900 border-b border-gray-200 pb-3">{project.title.toUpperCase()}</div>
               
-              <div className="space-y-2">
-                <p><strong>Genre :</strong> Comédie de science-fiction</p>
-                <p><strong>Durée estimée :</strong> 5 minutes</p>
-                <p><strong>Lieu unique :</strong> Une rue piétonne animée, en début d'après-midi</p>
+              <div className="space-y-3 bg-gray-50 p-4 rounded-lg">
+                <p className="text-gray-800"><strong className="text-gray-900">Script :</strong> <span className="text-blue-700">{project.scriptFile}</span></p>
+                <p className="text-gray-800"><strong className="text-gray-900">Période de tournage :</strong> <span className="text-gray-700">{new Date(project.startDate).toLocaleDateString('fr-FR')} → {new Date(project.endDate).toLocaleDateString('fr-FR')}</span></p>
+                <p className="text-gray-800"><strong className="text-gray-900">Année :</strong> <span className="text-gray-700">{project.year}</span></p>
+                <p className="text-gray-800"><strong className="text-gray-900">Séquences créées :</strong> <span className="text-green-700 font-semibold">{projectSequences.length}</span></p>
               </div>
 
-              <div className="border-t pt-4 mt-6">
-                <p className="font-bold">PAGE 1</p>
-                <p className="font-bold mt-4">EXT. RUE PIÉTONNE - JOUR</p>
+              <div className="border-t border-gray-300 pt-4 mt-6">
+                <h3 className="font-bold text-gray-900 text-base mb-4">INFORMATIONS PROJET</h3>
                 
-                <p className="mt-4 leading-relaxed">
-                  Une rue commerçante. Passants, vélos, poussettes. Un MIMÉE (mime) statue vivante. 
-                  Un CHIEN renifle une borne de parking. Des panneaux incompréhensibles... pour deux créatures en 
-                  manteaux longs, lunettes de soleil : ZOG (méticuleux) et KIP (enthousiaste). 
-                  Ils ont l'air presque humains, sauf quand le vent révèle leurs chevilles... bleues.
-                </p>
+                <div className="mt-4 space-y-4">
+                  <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
+                    <p className="font-semibold text-blue-900 mb-2">📋 Statut : En préparation</p>
+                    <p className="text-blue-800 text-sm leading-relaxed">
+                      Projet en cours d'analyse. Le dépouillement du script permettra d'identifier 
+                      toutes les séquences et leurs besoins techniques.
+                    </p>
+                  </div>
 
-                <p className="mt-4">ZOG vérifie un BRACELET-TRADUCTEUR qui clignote.</p>
+                  {projectSequences.length > 0 && (
+                    <div className="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                      <p className="font-semibold text-green-900 mb-2">🎬 Séquences identifiées :</p>
+                      <ul className="text-sm text-green-800 mt-2 space-y-1">
+                        {projectSequences.slice(0, 3).map((seq) => (
+                          <li key={seq.id} className="text-green-800">
+                            • <span className="font-medium text-green-900">{seq.code}</span> - <span className="text-green-700">{seq.title}</span>
+                          </li>
+                        ))}
+                        {projectSequences.length > 3 && (
+                          <li className="text-green-600 italic">... et {projectSequences.length - 3} autres séquences</li>
+                        )}
+                      </ul>
+                    </div>
+                  )}
 
-                <div className="ml-8 mt-4 space-y-2">
-                  <p className="font-bold">ZOG</p>
-                  <p className="italic">(chuchote)</p>
-                  <p>Protocole d'infiltration : marcher « comme si on connaissait ».</p>
-                  
-                  <p className="font-bold mt-4">KIP</p>
-                  <p className="italic">(large sourire)</p>
-                  <p>Je connais ! J'ai binge-watché douze saisons de familles très normales. Je suis prêt à « bonjourer ».</p>
+                  <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r-lg">
+                    <p className="font-semibold text-amber-900 mb-2">⏭️ Prochaines étapes :</p>
+                    <ul className="text-sm text-amber-800 mt-2 space-y-1">
+                      <li className="text-amber-800">• Finaliser l'analyse du script</li>
+                      <li className="text-amber-800">• Valider toutes les séquences</li>
+                      <li className="text-amber-800">• Établir le planning de tournage</li>
+                    </ul>
+                  </div>
                 </div>
-
-                <p className="mt-4">
-                  Ils s'engagent. Un FEU PIÉTON passe au rouge. Les humains s'arrêtent.
-                </p>
               </div>
             </div>
           </div>
@@ -97,7 +113,7 @@ export default function BreakdownPage() {
               </Button>
               
               <p className="text-gray-400 mb-6">
-                {project.sequencesCount || 14} séquences créées — voir la liste
+                {projectSequences.length} séquences créées — voir la liste
               </p>
             </div>
 
@@ -106,16 +122,16 @@ export default function BreakdownPage() {
               <h3 className="text-white text-lg font-semibold mb-4">Informations</h3>
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Pages analysées:</span>
-                  <span className="text-white">1/8</span>
+                  <span className="text-gray-400">Script:</span>
+                  <span className="text-white">{project.scriptFile}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Séquences détectées:</span>
-                  <span className="text-white">14</span>
+                  <span className="text-gray-400">Séquences créées:</span>
+                  <span className="text-white">{projectSequences.length}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Personnages:</span>
-                  <span className="text-white">ZOG, KIP</span>
+                  <span className="text-gray-400">Année:</span>
+                  <span className="text-white">{project.year}</span>
                 </div>
               </div>
             </div>

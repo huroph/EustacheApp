@@ -37,6 +37,22 @@ export function useCurrentProject() {
     }
 
     loadProject()
+
+    // Écouter les changements dans localStorage
+    const handleStorageChange = () => {
+      const currentProject = getSelectedProject()
+      setProject(currentProject)
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    
+    // Vérifier périodiquement au cas où localStorage change dans la même fenêtre
+    const interval = setInterval(handleStorageChange, 500)
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      clearInterval(interval)
+    }
   }, [])
 
   const setProjectId = (id: string) => {

@@ -35,7 +35,7 @@ const navigation = [
 export default function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
-  const { project } = useCurrentProject()
+  const { project, isLoading } = useCurrentProject()
 
   const handleProjectClick = () => {
     router.push('/projects')
@@ -88,7 +88,15 @@ export default function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: Si
 
       {/* Section bas de sidebar - Projet sélectionné */}
       <div className="border-t border-gray-800 p-4">
-        {project ? (
+        {isLoading ? (
+          <div className={cn('space-y-2', isCollapsed && 'items-center')}>
+            {!isCollapsed && (
+              <div className="text-xs text-gray-400 uppercase tracking-wide mb-2">
+                Chargement...
+              </div>
+            )}
+          </div>
+        ) : project ? (
           <div
             onClick={handleProjectClick}
             className="cursor-pointer hover:bg-gray-800 rounded-md p-3 transition-colors"
@@ -101,6 +109,14 @@ export default function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: Si
                 <div className="text-sm font-medium text-white truncate">
                   {project.title}
                 </div>
+                <div className="text-xs text-gray-500">
+                  {project.sequencesCount || 0} séquences
+                </div>
+              </div>
+            )}
+            {isCollapsed && (
+              <div className="flex items-center justify-center">
+                <FolderOpen className="h-4 w-4 text-white" />
               </div>
             )}
           </div>
@@ -108,7 +124,7 @@ export default function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: Si
           <div className={cn('space-y-2', isCollapsed && 'items-center')}>
             {!isCollapsed && (
               <div className="text-xs text-gray-400 uppercase tracking-wide mb-2">
-                Aucun projet
+                Aucun projet sélectionné
               </div>
             )}
           </div>
@@ -122,7 +138,7 @@ export default function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: Si
           )}
         >
           <FolderOpen className={cn('h-4 w-4', !isCollapsed && 'mr-2')} />
-          {!isCollapsed && 'Changer de projet'}
+          {!isCollapsed && (project ? 'Changer de projet' : 'Sélectionner un projet')}
         </Button>
       </div>
     </div>
