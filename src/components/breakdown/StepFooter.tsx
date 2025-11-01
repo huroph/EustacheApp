@@ -17,7 +17,9 @@ export default function StepFooter({ currentIndex, total, onPrev, onNext, onSubm
   
   // Informations sur la séquence courante
   const currentSequence = sessionStore.getCurrentSequence()
+  
   const sequenceStats = currentSequence ? {
+    title: currentSequence.title,
     decorsCount: sessionStore.getDecors(currentSequence.id).length,
     scenesCount: sessionStore.getScenes(currentSequence.id).length,
     rolesCount: sessionStore.getRoles(currentSequence.id).length,
@@ -25,7 +27,7 @@ export default function StepFooter({ currentIndex, total, onPrev, onNext, onSubm
     accessoiresCount: sessionStore.getAccessoires(currentSequence.id).length,
     effetsSpeciauxCount: sessionStore.getEffetsSpeciaux(currentSequence.id).length,
     materielSonCount: sessionStore.getMaterielSon(currentSequence.id).length,
-    title: currentSequence.title
+    machineriesCount: sessionStore.getMachineries(currentSequence.id).length
   } : null
 
   // Informations globales
@@ -50,6 +52,7 @@ export default function StepFooter({ currentIndex, total, onPrev, onNext, onSubm
             <span>{sequenceStats.accessoiresCount} accessoire(s)</span>
             <span>{sequenceStats.effetsSpeciauxCount} effet(s) spéciaux</span>
             <span>{sequenceStats.materielSonCount} matériel(s) son</span>
+            <span>{sequenceStats.machineriesCount} machinerie(s)</span>
             <span>{globalStats.equipesTechniquesCount} équipe(s) technique(s)</span>
           </div>
         </div>
