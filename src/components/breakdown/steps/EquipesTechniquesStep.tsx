@@ -1,16 +1,29 @@
 'use client'
 
 import { EquipeTechnique } from '@/lib/types-clean'
-import { sessionStore } from '@/lib/sessionStore-mock'
+import { useEquipesTechniques } from '@/hooks/useEquipesTechniques'
 import { EquipesTechniquesList } from './equipes-techniques/EquipesTechniquesList'
-import { EquipesTechniquesForm } from './equipes-techniques/EquipesTechniquesForm'
-import { useState, useEffect } from 'react'
+import { EquipesTechniquesForm, EquipesTechniquesFormRef } from './equipes-techniques/EquipesTechniquesForm'
+import { useState, useEffect, useRef } from 'react'
 import { useStepForm } from '@/hooks/useStepForm'
+import toast from 'react-hot-toast'
 
-export function EquipesTechniquesStep() {
+interface EquipesTechniquesStepProps {
+  sequenceId: string
+}
+
+export function EquipesTechniquesStep({ sequenceId }: EquipesTechniquesStepProps) {
+  const { refreshEquipesTechniques } = useEquipesTechniques(sequenceId)
   const { enterFormMode, exitFormMode } = useStepForm()
   const [viewMode, setViewMode] = useState<'list' | 'form'>('list')
   const [editingEquipe, setEditingEquipe] = useState<EquipeTechnique | undefined>(undefined)
+  const formRef = useRef<EquipesTechniquesFormRef>(null)
+
+  // Réinitialiser quand on change de séquence
+  useEffect(() => {
+    setViewMode('list')
+    setEditingEquipe(undefined)
+  }, [sequenceId])
 
   const handleCreateClick = () => {
     setEditingEquipe(undefined)
@@ -20,7 +33,7 @@ export function EquipesTechniquesStep() {
     enterFormMode(
       () => {
         // Cette fonction sera appelée quand on clique sur "Créer" dans le footer
-        console.log('Submit equipe technique form')
+        formRef.current?.submitForm()
       },
       () => {
         // Fonction d'annulation - le contexte gère automatiquement la sortie du mode formulaire
@@ -39,7 +52,7 @@ export function EquipesTechniquesStep() {
     enterFormMode(
       () => {
         // Cette fonction sera appelée quand on clique sur "Modifier" dans le footer
-        console.log('Submit equipe technique form')
+        formRef.current?.submitForm()
       },
       () => {
         // Fonction d'annulation - le contexte gère automatiquement la sortie du mode formulaire
@@ -60,6 +73,9 @@ export function EquipesTechniquesStep() {
     setEditingEquipe(undefined)
     setViewMode('list')
     
+    // Rafraîchir la liste des équipes techniques
+    refreshEquipesTechniques()
+    
     // Sortir du mode formulaire
     exitFormMode()
   }
@@ -67,6 +83,8 @@ export function EquipesTechniquesStep() {
   if (viewMode === 'form') {
     return (
       <EquipesTechniquesForm
+        ref={formRef}
+        sequenceId={sequenceId}
         equipe={editingEquipe}
         onCancel={handleBackToList}
         onSuccess={handleFormSuccess}
@@ -76,6 +94,7 @@ export function EquipesTechniquesStep() {
 
   return (
     <EquipesTechniquesList
+      sequenceId={sequenceId}
       onCreateClick={handleCreateClick}
       onEditClick={handleEditClick}
     />

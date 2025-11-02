@@ -305,7 +305,7 @@ export default function CreateSequenceForm({ onCancel, editMode = false, sequenc
       case "Effets spéciaux":
         return <EffetsSpeciauxStep sequenceId={currentSequenceId || ''} />
       case "Équipe technique":
-        return <EquipesTechniquesStep />
+        return <EquipesTechniquesStep sequenceId={currentSequenceId || ''} />
       case "Son":
         return <SonStep sequenceId={currentSequenceId || ''} />
       case "Machinerie":
