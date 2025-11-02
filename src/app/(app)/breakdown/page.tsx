@@ -3,8 +3,8 @@
 
 import { useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useCurrentProject } from '@/lib/currentProject'
-import { sessionStore } from '@/lib/sessionStore-mock'
+import { useCurrentProject } from '@/lib/currentProject-supabase'
+import { useSequences } from '@/hooks/useSequences'
 import { useSidebar } from '@/hooks/useSidebar'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
@@ -13,7 +13,8 @@ import CreateSequenceForm from '@/components/breakdown/CreateSequenceForm'
 export default function BreakdownPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { project, isLoading } = useCurrentProject()
+  const { project, isLoading: projectLoading } = useCurrentProject()
+  const { sequences, isLoading: sequencesLoading } = useSequences(project?.id)
   const { isCollapsed } = useSidebar()
   
   // Mode création ou édition basé sur l'URL
@@ -21,22 +22,17 @@ export default function BreakdownPage() {
   const editSequenceId = searchParams.get('edit')
   const isEditMode = !!editSequenceId
 
-  // Récupérer les séquences créées pour le comptage
-  const allSequences = sessionStore.getSequences()
-
   useEffect(() => {
-    if (!isLoading && !project) {
+    if (!projectLoading && !project) {
       router.push('/projects')
     }
-  }, [project, isLoading, router])
+  }, [project, projectLoading, router])
 
   // Si on est en mode édition, charger la séquence
   useEffect(() => {
     if (isEditMode && editSequenceId) {
-      const sequence = sessionStore.getSequence(editSequenceId)
-      if (sequence) {
-        sessionStore.setCurrentSequence(sequence.id)
-      }
+      // TODO: Implémenter la logique de chargement de séquence pour l'édition
+      console.log('Mode édition pour la séquence:', editSequenceId)
     }
   }, [isEditMode, editSequenceId])
 
@@ -48,7 +44,7 @@ export default function BreakdownPage() {
     router.push('/breakdown')
   }
 
-  if (isLoading) {
+  if (projectLoading || sequencesLoading) {
     return (
       <div className="min-h-screen bg-gray-900 p-6 flex items-center justify-center">
         <div className="text-white">Chargement...</div>
@@ -104,10 +100,10 @@ export default function BreakdownPage() {
                   <div className="font-bold text-center text-xl mb-6 text-gray-900 border-b border-gray-200 pb-3" style={{color: '#111827'}}>{project.title.toUpperCase()}</div>
                   
                   <div className="space-y-3 bg-gray-50 p-4 rounded-lg">
-                    <p className="text-gray-800" style={{color: '#1f2937'}}><strong className="text-gray-900" style={{color: '#111827'}}>Script :</strong> <span className="text-blue-700" style={{color: '#1d4ed8'}}>{project.scriptFile}</span></p>
-                    <p className="text-gray-800" style={{color: '#1f2937'}}><strong className="text-gray-900" style={{color: '#111827'}}>Période de tournage :</strong> <span className="text-gray-700" style={{color: '#374151'}}>{new Date(project.startDate).toLocaleDateString('fr-FR')} → {new Date(project.endDate).toLocaleDateString('fr-FR')}</span></p>
-                    <p className="text-gray-800" style={{color: '#1f2937'}}><strong className="text-gray-900" style={{color: '#111827'}}>Année :</strong> <span className="text-gray-700" style={{color: '#374151'}}>{project.year}</span></p>
-                    <p className="text-gray-800" style={{color: '#1f2937'}}><strong className="text-gray-900" style={{color: '#111827'}}>Séquences créées :</strong> <span className="text-green-700 font-semibold" style={{color: '#15803d'}}>{allSequences.length}</span></p>
+                    <p className="text-gray-800" style={{color: '#1f2937'}}><strong className="text-gray-900" style={{color: '#111827'}}>Script :</strong> <span className="text-blue-700" style={{color: '#1d4ed8'}}>{project.script_file || 'Non défini'}</span></p>
+                    <p className="text-gray-800" style={{color: '#1f2937'}}><strong className="text-gray-900" style={{color: '#111827'}}>Période de tournage :</strong> <span className="text-gray-700" style={{color: '#374151'}}>{project.start_date && project.end_date ? `${new Date(project.start_date).toLocaleDateString('fr-FR')} → ${new Date(project.end_date).toLocaleDateString('fr-FR')}` : 'Non définie'}</span></p>
+                    <p className="text-gray-800" style={{color: '#1f2937'}}><strong className="text-gray-900" style={{color: '#111827'}}>Année :</strong> <span className="text-gray-700" style={{color: '#374151'}}>{project.start_date ? new Date(project.start_date).getFullYear() : new Date().getFullYear()}</span></p>
+                    <p className="text-gray-800" style={{color: '#1f2937'}}><strong className="text-gray-900" style={{color: '#111827'}}>Séquences créées :</strong> <span className="text-green-700 font-semibold" style={{color: '#15803d'}}>{sequences.length}</span></p>
                   </div>
 
                   <div className="border-t border-gray-300 pt-4 mt-6">
@@ -122,17 +118,17 @@ export default function BreakdownPage() {
                         </p>
                       </div>
 
-                      {allSequences.length > 0 && (
+                      {sequences.length > 0 && (
                         <div className="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
                           <p className="font-semibold text-green-900 mb-2" style={{color: '#14532d'}}>🎬 Séquences identifiées :</p>
                           <ul className="text-sm text-green-800 mt-2 space-y-1">
-                            {allSequences.slice(0, 3).map((seq) => (
+                            {sequences.slice(0, 3).map((seq) => (
                               <li key={seq.id} className="text-green-800" style={{color: '#166534'}}>
                                 • <span className="font-medium text-green-900" style={{color: '#14532d'}}>{seq.code}</span> - <span className="text-green-700" style={{color: '#15803d'}}>{seq.title}</span>
                               </li>
                             ))}
-                            {allSequences.length > 3 && (
-                              <li className="text-green-600 italic" style={{color: '#16a34a'}}>... et {allSequences.length - 3} autres séquences</li>
+                            {sequences.length > 3 && (
+                              <li className="text-green-600 italic" style={{color: '#16a34a'}}>... et {sequences.length - 3} autres séquences</li>
                             )}
                           </ul>
                         </div>
@@ -168,7 +164,7 @@ export default function BreakdownPage() {
                 </Button>
                 
                 <p className="text-gray-400 mb-6">
-                  {allSequences.length} séquences créées — voir la liste
+                  {sequences.length} séquences créées — voir la liste
                 </p>
               </div>
 
@@ -178,15 +174,15 @@ export default function BreakdownPage() {
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-400">Script:</span>
-                    <span className="text-white">{project.scriptFile}</span>
+                    <span className="text-white">{project.script_file || 'Non défini'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">Séquences créées:</span>
-                    <span className="text-white">{allSequences.length}</span>
+                    <span className="text-white">{sequences.length}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">Année:</span>
-                    <span className="text-white">{project.year}</span>
+                    <span className="text-white">{project.start_date ? new Date(project.start_date).getFullYear() : new Date().getFullYear()}</span>
                   </div>
                 </div>
               </div>

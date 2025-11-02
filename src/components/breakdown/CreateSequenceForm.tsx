@@ -189,6 +189,7 @@ export default function CreateSequenceForm({ onCancel, editMode = false, sequenc
             formData={formData} 
             setFormData={setFormData}
             showSuccess={showSuccess}
+            sequenceId={currentSequence?.id}
           />
         )
       case "Rôle":
@@ -206,7 +207,7 @@ export default function CreateSequenceForm({ onCancel, editMode = false, sequenc
       case "Machinerie":
         return <MachinerieStep sequenceId={currentSequence?.id || ''} />
       default:
-        return <GeneralStep formData={formData} setFormData={setFormData} showSuccess={showSuccess} />
+        return <GeneralStep formData={formData} setFormData={setFormData} showSuccess={showSuccess} sequenceId={currentSequence?.id} />
     }
   }
 

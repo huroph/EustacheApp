@@ -62,6 +62,123 @@ export type Database = {
           updated_at?: string
         }
       }
+      sequences: {
+        Row: {
+          id: string
+          code: string
+          title: string
+          project_id: string
+          color_id: string | null
+          status: 'A validé' | 'En attente' | 'Validé'
+          location: string | null
+          summary: string | null
+          pre_montage: string | null
+          ett: string | null
+          time_of_day: 'JOUR' | 'NUIT' | null
+          location_type: 'INT' | 'EXT' | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          code?: string
+          title: string
+          project_id: string
+          color_id?: string | null
+          status?: 'A validé' | 'En attente' | 'Validé'
+          location?: string | null
+          summary?: string | null
+          pre_montage?: string | null
+          ett?: string | null
+          time_of_day?: 'JOUR' | 'NUIT' | null
+          location_type?: 'INT' | 'EXT' | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          code?: string
+          title?: string
+          project_id?: string
+          color_id?: string | null
+          status?: 'A validé' | 'En attente' | 'Validé'
+          location?: string | null
+          summary?: string | null
+          pre_montage?: string | null
+          ett?: string | null
+          time_of_day?: 'JOUR' | 'NUIT' | null
+          location_type?: 'INT' | 'EXT' | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      decors: {
+        Row: {
+          id: string
+          sequence_id: string
+          title: string
+          address: string | null
+          location_type: 'Intérieur' | 'Extérieur'
+          status: 'A validé' | 'En attente' | 'Validé' | 'Reporté'
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          sequence_id: string
+          title: string
+          address?: string | null
+          location_type?: 'Intérieur' | 'Extérieur'
+          status?: 'A validé' | 'En attente' | 'Validé' | 'Reporté'
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          sequence_id?: string
+          title?: string
+          address?: string | null
+          location_type?: 'Intérieur' | 'Extérieur'
+          status?: 'A validé' | 'En attente' | 'Validé' | 'Reporté'
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      scenes: {
+        Row: {
+          id: string
+          sequence_id: string
+          decor_id: string | null
+          numero: string
+          status: 'A validé' | 'En attente' | 'Validé' | 'Reporté'
+          description: string | null
+          duree_estimee: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          sequence_id: string
+          decor_id?: string | null
+          numero: string
+          status?: 'A validé' | 'En attente' | 'Validé' | 'Reporté'
+          description?: string | null
+          duree_estimee?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          sequence_id?: string
+          decor_id?: string | null
+          numero?: string
+          status?: 'A validé' | 'En attente' | 'Validé' | 'Reporté'
+          description?: string | null
+          duree_estimee?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
   }
 }

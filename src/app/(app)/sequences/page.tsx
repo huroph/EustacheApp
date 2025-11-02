@@ -3,84 +3,31 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useCurrentProject } from '@/lib/currentProject'
-import { sessionStore } from '@/lib/sessionStore-mock'
+import { useCurrentProject } from '@/lib/currentProject-supabase'
+import { useSequences } from '@/hooks/useSequences'
+import { SequencesService } from '@/lib/services/sequences'
 import SequenceCard from '@/components/sequences/SequenceCard'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 
 export default function SequencesPage() {
   const router = useRouter()
-  const { project, isLoading } = useCurrentProject()
+  const { project, isLoading: projectLoading } = useCurrentProject()
+  const { sequences, isLoading: sequencesLoading, error, refetch } = useSequences(project?.id)
   const [selectedSequence, setSelectedSequence] = useState<any>(null)
-  const [sequences, setSequences] = useState<any[]>([])
-
-  // Fonction pour recharger les séquences
-  const loadSequences = () => {
-    const allSequences = sessionStore.getSequences()
-    setSequences(allSequences)
-    console.log('Séquences rechargées:', allSequences)
-  }
-
-  // Debug: afficher le sessionStore au montage
-  useEffect(() => {
-    console.log('=== DEBUG SEQUENCES PAGE ===')
-    sessionStore.debugLog()
-    loadSequences()
-  }, [])
-
-  // Charger les séquences depuis sessionStore
-  useEffect(() => {
-    loadSequences()
-    
-    // Recharger les séquences quand la page reprend le focus
-    const handleFocus = () => {
-      loadSequences()
-    }
-    
-    window.addEventListener('focus', handleFocus)
-    
-    return () => {
-      window.removeEventListener('focus', handleFocus)
-    }
-  }, [])
-
-  // Effet pour recharger les séquences quand on revient sur cette page
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        loadSequences()
-      }
-    }
-    
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-    
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
-    }
-  }, [])
-
-  // Subscribe to sessionStore changes so the list refreshes immediately after create/update/delete
-  useEffect(() => {
-    const unsubscribe = sessionStore.subscribe(() => {
-      loadSequences()
-    })
-
-    return () => {
-      unsubscribe()
-    }
-  }, [])
 
   useEffect(() => {
-    if (!isLoading && !project) {
+    if (!projectLoading && !project) {
       router.push('/projects')
     }
-  }, [project, isLoading, router])
+  }, [project, projectLoading, router])
 
   // Initialiser la première séquence sélectionnée quand les données changent
   useEffect(() => {
     if (sequences.length > 0 && !selectedSequence) {
       setSelectedSequence(sequences[0])
+    } else if (sequences.length === 0) {
+      setSelectedSequence(null)
     }
   }, [sequences, selectedSequence])
 
@@ -89,14 +36,21 @@ export default function SequencesPage() {
     router.push(`/breakdown?edit=${sequence.id}`)
   }
 
-  const handleDeleteSequence = (sequenceId: string) => {
-    sessionStore.deleteSequence(sequenceId)
-    loadSequences() // Recharger immédiatement
-    
-    // Si la séquence supprimée était sélectionnée, réinitialiser la sélection
-    if (selectedSequence?.id === sequenceId) {
-      const remainingSequences = sessionStore.getSequences()
-      setSelectedSequence(remainingSequences.length > 0 ? remainingSequences[0] : null)
+  const handleDeleteSequence = async (sequenceId: string) => {
+    if (confirm('Supprimer cette séquence ?')) {
+      try {
+        await SequencesService.delete(sequenceId)
+        await refetch() // Recharger immédiatement
+        
+        // Si la séquence supprimée était sélectionnée, réinitialiser la sélection
+        if (selectedSequence?.id === sequenceId) {
+          const remainingSequences = sequences.filter(s => s.id !== sequenceId)
+          setSelectedSequence(remainingSequences.length > 0 ? remainingSequences[0] : null)
+        }
+      } catch (error) {
+        console.error('Erreur lors de la suppression:', error)
+        alert('Erreur lors de la suppression de la séquence')
+      }
     }
   }
 
@@ -104,10 +58,18 @@ export default function SequencesPage() {
     router.push('/breakdown')
   }
 
-  if (isLoading) {
+  if (projectLoading || sequencesLoading) {
     return (
       <div className="min-h-screen bg-gray-900 p-6 flex items-center justify-center">
         <div className="text-white">Chargement...</div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-900 p-6 flex items-center justify-center">
+        <div className="text-red-400">Erreur : {error}</div>
       </div>
     )
   }
@@ -135,7 +97,7 @@ export default function SequencesPage() {
               <h2 className="text-white font-semibold">Séquences</h2>
               <div className="flex items-center space-x-2">
                 <button
-                  onClick={loadSequences}
+                  onClick={refetch}
                   className="bg-gray-700 hover:bg-gray-600 text-white text-sm rounded px-2 py-1"
                   title="Recharger"
                 >
@@ -162,7 +124,18 @@ export default function SequencesPage() {
               {sequences.map((sequence) => (
                 <SequenceCard
                   key={sequence.id}
-                  sequence={sequence}
+                  sequence={{
+                    id: sequence.id,
+                    code: sequence.code,
+                    title: sequence.title,
+                    status: sequence.status,
+                    colorId: sequence.color_id || 'gray',
+                    location: sequence.location || '',
+                    type: sequence.location_type || 'INT',
+                    effet: sequence.time_of_day || 'JOUR',
+                    summary: sequence.summary || undefined,
+                    createdAt: new Date(sequence.created_at)
+                  }}
                   onClick={() => setSelectedSequence(sequence)}
                   isSelected={selectedSequence?.id === sequence.id}
                   onEdit={handleEditSequence}
@@ -191,14 +164,14 @@ export default function SequencesPage() {
                     <div className="flex items-center space-x-2 mb-2">
                       <span className="text-yellow-400 text-sm">{selectedSequence.code}</span>
                       <Badge>{selectedSequence.status}</Badge>
-                      <Badge>{selectedSequence.type}</Badge>
-                      <Badge>{selectedSequence.effet}</Badge>
+                      <Badge>{selectedSequence.location_type || 'INT'}</Badge>
+                      <Badge>{selectedSequence.time_of_day || 'JOUR'}</Badge>
                     </div>
                     <h2 className="text-2xl font-bold text-white mb-2">
                       {selectedSequence.title}
                     </h2>
                     <p className="text-gray-400 text-sm">
-                      {selectedSequence.createdAt && new Date(selectedSequence.createdAt).toLocaleDateString('fr-FR')}
+                      {selectedSequence.created_at && new Date(selectedSequence.created_at).toLocaleDateString('fr-FR')}
                     </p>
                   </div>
                   <Button 
@@ -236,14 +209,14 @@ export default function SequencesPage() {
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <h4 className="text-white font-medium mb-2">E.T.T. (hh:mm) :</h4>
-                        <p className="text-blue-400 font-semibold">{selectedSequence.ett || 'Non défini'}</p>
-                      </div>
-                      <div>
-                        <h4 className="text-white font-medium mb-2">Pré-minutage (mm:ss) :</h4>
-                        <p className="text-blue-400 font-semibold">{selectedSequence.preMintage || 'Non défini'}</p>
-                      </div>
+                    <div>
+                      <h4 className="text-white font-medium mb-2">E.T.T. (hh:mm) :</h4>
+                      <p className="text-blue-400 font-semibold">{selectedSequence.ett || 'Non défini'}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-white font-medium mb-2">Pré-minutage (mm:ss) :</h4>
+                      <p className="text-blue-400 font-semibold">{selectedSequence.pre_montage || 'Non défini'}</p>
+                    </div>
                     </div>
 
                     <div>
@@ -253,44 +226,23 @@ export default function SequencesPage() {
                       </p>
                     </div>
 
-                    {/* Décors et scènes */}
                     <div>
                       <h4 className="text-white font-medium mb-2">Décors :</h4>
                       <div className="space-y-2">
-                        {sessionStore.getDecors(selectedSequence.id).map((decor) => (
-                          <div key={decor.id} className="bg-gray-700 rounded p-2">
-                            <div className="flex items-center justify-between">
-                              <span className="text-gray-300 text-sm">{decor.title}</span>
-                              <Badge>{decor.manoir}</Badge>
-                            </div>
-                            {decor.address && (
-                              <p className="text-gray-400 text-xs mt-1">{decor.address}</p>
-                            )}
-                          </div>
-                        ))}
-                        {sessionStore.getDecors(selectedSequence.id).length === 0 && (
-                          <p className="text-gray-400 text-sm">Aucun décor défini</p>
-                        )}
+                        <div className="text-center text-gray-400 py-4">
+                          <p className="text-sm">Fonctionnalité à venir</p>
+                          <p className="text-xs mt-1">Migration des décors en cours...</p>
+                        </div>
                       </div>
                     </div>
 
                     <div>
                       <h4 className="text-white font-medium mb-2">Scènes :</h4>
                       <div className="space-y-2">
-                        {sessionStore.getScenes(selectedSequence.id).map((scene) => (
-                          <div key={scene.id} className="bg-gray-700 rounded p-2">
-                            <div className="flex items-center justify-between">
-                              <span className="text-gray-300 text-sm">Scène {scene.numero}</span>
-                              <Badge>{scene.status}</Badge>
-                            </div>
-                            {scene.description && (
-                              <p className="text-gray-400 text-xs mt-1">{scene.description}</p>
-                            )}
-                          </div>
-                        ))}
-                        {sessionStore.getScenes(selectedSequence.id).length === 0 && (
-                          <p className="text-gray-400 text-sm">Aucune scène définie</p>
-                        )}
+                        <div className="text-center text-gray-400 py-4">
+                          <p className="text-sm">Fonctionnalité à venir</p>
+                          <p className="text-xs mt-1">Migration des scènes en cours...</p>
+                        </div>
                       </div>
                     </div>
                   </div>

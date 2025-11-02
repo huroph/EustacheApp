@@ -112,7 +112,7 @@ export default function CostumeStep() {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <p className="text-gray-400 text-sm">Gestion des costumes et garde-robe</p>
+        <p className="text-gray-400 text-sm">{viewMode === 'list' ? 'Gestion des costumes et garde-robe' : 'Modifier le costume'}</p>
         <div className="w-full h-px bg-blue-500"></div>
       </div>
 

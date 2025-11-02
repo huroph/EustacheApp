@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { FileText, Film, Calendar, FolderOpen } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import Button from '@/components/ui/Button'
-import { useCurrentProject } from '@/lib/currentProject'
+import { useCurrentProject } from '@/lib/currentProject-supabase'
 
 interface SidebarProps {
   isCollapsed: boolean
@@ -35,7 +35,7 @@ const navigation = [
 export default function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
-  const { project, isLoading } = useCurrentProject()
+  const { project, sequencesCount, isLoading } = useCurrentProject()
 
   const handleProjectClick = () => {
     router.push('/projects')
@@ -110,7 +110,7 @@ export default function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: Si
                   {project.title}
                 </div>
                 <div className="text-xs text-gray-500">
-                  {project.sequencesCount || 0} séquences
+                  {sequencesCount} séquences
                 </div>
               </div>
             )}

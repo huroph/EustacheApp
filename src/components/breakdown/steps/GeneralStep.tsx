@@ -1,11 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Decor, Scene } from '@/lib/types-clean'
-import { sessionStore } from '@/lib/sessionStore-mock'
+import { useState } from 'react'
 import InformationsForm from './general/InformationsForm'
-import DecorStep from './general/DecorStep'
-import SceneStep from './general/SceneStep'
+import SimpleDecorStep from './general/SimpleDecorStep'
+import SimpleSceneStep from './general/SimpleSceneStep'
 
 interface GeneralStepProps {
   formData: {
@@ -22,34 +20,14 @@ interface GeneralStepProps {
   }
   setFormData: (data: any) => void
   showSuccess: boolean
+  sequenceId?: string  // Pour les composants Supabase
 }
 
 const GENERAL_SUB_STEPS = ["Informations", "Décors", "Scènes"] as const
 type GeneralSubStep = typeof GENERAL_SUB_STEPS[number]
 
-export default function GeneralStep({ formData, setFormData, showSuccess }: GeneralStepProps) {
+export default function GeneralStep({ formData, setFormData, showSuccess, sequenceId }: GeneralStepProps) {
   const [currentSubStep, setCurrentSubStep] = useState<GeneralSubStep>("Informations")
-  const [decors, setDecors] = useState<Decor[]>([])
-  const [scenes, setScenesData] = useState<Scene[]>([])
-
-  const currentSequence = sessionStore.getCurrentSequence()
-
-  // Charger les données au montage
-  useEffect(() => {
-    if (currentSequence) {
-      loadData()
-    }
-  }, [currentSequence])
-
-  const loadData = () => {
-    if (!currentSequence) return
-    
-    const sequenceDecors = sessionStore.getDecors(currentSequence.id)
-    const sequenceScenes = sessionStore.getScenes(currentSequence.id)
-    
-    setDecors(sequenceDecors)
-    setScenesData(sequenceScenes)
-  }
 
   const renderSubStepContent = () => {
     switch (currentSubStep) {
@@ -63,20 +41,21 @@ export default function GeneralStep({ formData, setFormData, showSuccess }: Gene
         )
       
       case "Décors":
-        return (
-          <DecorStep 
-            sequenceId={currentSequence?.id || ''}
-            onUpdate={loadData}
-          />
+        return sequenceId ? (
+          <SimpleDecorStep sequenceId={sequenceId} />
+        ) : (
+          <div className="text-gray-400 text-center py-8">
+            Veuillez d'abord créer la séquence pour gérer les décors
+          </div>
         )
       
       case "Scènes":
-        return (
-          <SceneStep 
-            sequenceId={currentSequence?.id || ''}
-            decors={decors}
-            onUpdate={loadData}
-          />
+        return sequenceId ? (
+          <SimpleSceneStep sequenceId={sequenceId} />
+        ) : (
+          <div className="text-gray-400 text-center py-8">
+            Veuillez d'abord créer la séquence pour gérer les scènes
+          </div>
         )
       
       default:
@@ -109,23 +88,6 @@ export default function GeneralStep({ formData, setFormData, showSuccess }: Gene
       <div className="min-h-[400px]">
         {renderSubStepContent()}
       </div>
-
-      {/* Summary if data exists */}
-      {(decors.length > 0 || scenes.length > 0) && (
-        <div className="bg-gray-800 rounded-lg p-4 border border-gray-600">
-          <h3 className="text-white font-medium mb-3">Résumé</h3>
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <span className="text-gray-400">Décors:</span>
-              <span className="text-white ml-2">{decors.length}</span>
-            </div>
-            <div>
-              <span className="text-gray-400">Scènes:</span>
-              <span className="text-white ml-2">{scenes.length}</span>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

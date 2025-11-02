@@ -176,7 +176,7 @@ export const sessionStore = {
     return null
   },
   getSequences: (): MockSequence[] => {
-    console.warn('Mock sessionStore: getSequences appelé - sera remplacé par Supabase')
+    // Note: Method migrated to Supabase - returns empty array
     return []
   },
   setCurrentSequence: (sequenceId: string): void => {
