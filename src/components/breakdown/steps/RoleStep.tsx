@@ -102,7 +102,7 @@ export default function RoleStep() {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <p className="text-gray-400 text-sm">Configuration des rôles et personnages</p>
+        <p className="text-gray-400 text-sm">{viewMode === 'list' ? 'Configuration des rôles et personnages' : 'Modifier le rôle'}</p>
         <div className="w-full h-px bg-blue-500"></div>
       </div>
 
