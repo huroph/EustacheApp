@@ -10,6 +10,7 @@ interface StepFooterProps {
   onPrev: () => void
   onNext: () => void
   onSubmit: () => void
+  editMode?: boolean  // Nouveau prop pour savoir si on est en mode édition
 }
 
 export default function StepFooter({ 
@@ -17,7 +18,8 @@ export default function StepFooter({
   total, 
   onPrev, 
   onNext, 
-  onSubmit
+  onSubmit,
+  editMode = false  // Valeur par défaut
 }: StepFooterProps) {
   const isFirst = currentIndex === 0
   const isLast = currentIndex === total - 1
@@ -109,9 +111,9 @@ export default function StepFooter({
                 type="button" 
                 variant="default" 
                 onClick={onSubmit}
-                className="bg-green-600 hover:bg-green-700"
+                className="bg-green-600 hover:bg-green-700 cursor-pointer"
               >
-                Créer la séquence
+                {editMode ? 'Enregistrer les modifications' : 'Créer la séquence'}
               </Button>
             ) : (
               <Button type="button" variant="default" onClick={onNext}>

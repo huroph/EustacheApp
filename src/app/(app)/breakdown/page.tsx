@@ -21,6 +21,9 @@ export default function BreakdownPage() {
   const isCreateMode = searchParams.get('create') === '1'
   const editSequenceId = searchParams.get('edit')
   const isEditMode = !!editSequenceId
+  
+  // Détermine si on a une séquence à éditer (depuis l'URL ou depuis les séquences existantes)
+  const hasSequenceToEdit = isEditMode && editSequenceId && sequences.some(seq => seq.id === editSequenceId)
 
   useEffect(() => {
     if (!projectLoading && !project) {
@@ -38,6 +41,14 @@ export default function BreakdownPage() {
 
   const handleCreateClick = () => {
     router.push('/breakdown?create=1')
+  }
+
+  const handleEditClick = () => {
+    // Si on a des séquences, éditer la première pour l'exemple
+    // En réalité, ceci viendrait d'une sélection utilisateur
+    if (sequences.length > 0) {
+      router.push(`/breakdown?edit=${sequences[0].id}`)
+    }
   }
 
   const handleCancel = () => {
@@ -73,19 +84,19 @@ export default function BreakdownPage() {
 
         {/* Main content grid */}
         <div className={`grid gap-6 flex-1 min-h-0 overflow-y-hidden ${
-          isCreateMode 
+          isCreateMode || isEditMode
             ? 'grid-cols-1 lg:grid-cols-12'
             : 'grid-cols-1 lg:grid-cols-2'
         }`}>
           {/* Script viewer (left side) - Scrollable */}
           <div className={`rounded-lg overflow-y-auto ${
-            isCreateMode ? 'lg:col-span-7' : ''
+            isCreateMode || isEditMode ? 'lg:col-span-7' : ''
           }`}>
-            {isCreateMode ? (
-              // Mode création : affichage du PDF
+            {isCreateMode || isEditMode ? (
+              // Mode création/édition : affichage du PDF
               <div className="bg-slate-900 border border-slate-700 rounded-lg p-4 h-full">
                 <div className="text-white text-lg font-semibold mb-4 border-b border-slate-600 pb-2">
-                  Script : Joyeux Noël
+                  Script : Joyeux Noël {isEditMode ? '(Mode édition)' : '(Mode création)'}
                 </div>
                 <iframe
                   src="/scenarios/Joyeux-Noël.pdf"
@@ -150,9 +161,13 @@ export default function BreakdownPage() {
           </div>
 
           {/* Actions panel or Create form (right side) */}
-          {isCreateMode ? (
+          {isCreateMode || isEditMode ? (
             <div className="lg:col-span-5 overflow-y-hidden">
-              <CreateSequenceForm onCancel={handleCancel} />
+              <CreateSequenceForm 
+                onCancel={handleCancel} 
+                editMode={isEditMode}
+                sequenceId={editSequenceId || undefined}
+              />
             </div>
           ) : (
             <div className="space-y-6 flex flex-col overflow-y-hidden">
@@ -163,6 +178,12 @@ export default function BreakdownPage() {
                   + Créer une séquence
                 </Button>
                 
+                {sequences.length > 0 && (
+                  <Button variant="default" className="w-full mb-4" onClick={handleEditClick}>
+                    ✏️ Modifier une séquence
+                  </Button>
+                )}
+
                 <p className="text-gray-400 mb-6">
                   {sequences.length} séquences créées — voir la liste
                 </p>

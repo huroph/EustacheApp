@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import toast from 'react-hot-toast'
 import { useCurrentProject } from '@/lib/currentProject-supabase'
 import { useSequences } from '@/hooks/useSequences'
 import { SequencesService } from '@/lib/services/sequences'
@@ -37,9 +38,14 @@ export default function SequencesPage() {
   }
 
   const handleDeleteSequence = async (sequenceId: string) => {
+    const sequence = sequences.find(s => s.id === sequenceId)
     if (confirm('Supprimer cette séquence ?')) {
+      const loadingToast = toast.loading('Suppression de la séquence...')
       try {
         await SequencesService.delete(sequenceId)
+        toast.success(`Séquence "${sequence?.title}" supprimée avec succès`, {
+          id: loadingToast,
+        })
         await refetch() // Recharger immédiatement
         
         // Si la séquence supprimée était sélectionnée, réinitialiser la sélection
@@ -49,7 +55,9 @@ export default function SequencesPage() {
         }
       } catch (error) {
         console.error('Erreur lors de la suppression:', error)
-        alert('Erreur lors de la suppression de la séquence')
+        toast.error('Erreur lors de la suppression de la séquence', {
+          id: loadingToast,
+        })
       }
     }
   }

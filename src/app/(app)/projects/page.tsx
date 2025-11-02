@@ -2,6 +2,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import toast from 'react-hot-toast'
 import { useProjects } from '@/hooks/useProjects'
 import { useCurrentProject } from '@/lib/currentProject-supabase'
 import Badge from '@/components/ui/Badge'
@@ -13,17 +14,33 @@ export default function ProjectsPage() {
   const { setProjectId } = useCurrentProject()
 
   const handleSeedProjects = async () => {
+    const loadingToast = toast.loading('Création des projets d\'exemple...')
     const success = await seedProjects()
     if (success) {
+      toast.success('Projets d\'exemple créés avec succès', {
+        id: loadingToast,
+      })
       refetch() // Recharger la liste
+    } else {
+      toast.error('Erreur lors de la création des projets', {
+        id: loadingToast,
+      })
     }
   }
 
   const handleClearProjects = async () => {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer tous les projets ?')) {
+      const loadingToast = toast.loading('Suppression des projets...')
       const success = await clearProjects()
       if (success) {
+        toast.success('Tous les projets ont été supprimés', {
+          id: loadingToast,
+        })
         refetch() // Recharger la liste
+      } else {
+        toast.error('Erreur lors de la suppression des projets', {
+          id: loadingToast,
+        })
       }
     }
   }
@@ -44,13 +61,24 @@ export default function ProjectsPage() {
     .sort((a, b) => b - a)
 
   const handleProjectClick = async (projectId: string) => {
+    const project = projects.find(p => p.id === projectId)
+    const loadingToast = toast.loading('Sélection du projet...')
+    
     try {
       await setProjectId(projectId)
       // Petit délai pour s'assurer que le localStorage est écrit
       await new Promise(resolve => setTimeout(resolve, 100))
+      
+      toast.success(`Projet "${project?.title}" sélectionné`, {
+        id: loadingToast,
+      })
+      
       router.push('/sequences')
     } catch (error) {
       console.error('Erreur lors de la sélection du projet:', error)
+      toast.error('Erreur lors de la sélection du projet', {
+        id: loadingToast,
+      })
     }
   }
 

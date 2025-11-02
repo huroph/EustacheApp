@@ -2,7 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import toast from 'react-hot-toast'
 import { sessionStore } from '@/lib/sessionStore-mock'
+import { useCurrentProject } from '@/lib/currentProject-supabase'
+import { useSequences } from '@/hooks/useSequences'
 import { FooterProvider } from '@/contexts/FooterContext'
 import StepHeader from './StepHeader'
 import StepFooter from './StepFooter'
@@ -36,7 +39,10 @@ interface CreateSequenceFormProps {
 
 export default function CreateSequenceForm({ onCancel, editMode = false, sequenceId }: CreateSequenceFormProps) {
   const router = useRouter()
+  const { project } = useCurrentProject()
+  const { sequences, createSequence, updateSequence } = useSequences(project?.id)
   const [currentStep, setCurrentStep] = useState<StepKey>("Général")
+  const [createdSequenceId, setCreatedSequenceId] = useState<string | null>(sequenceId || null)
   const [formData, setFormData] = useState({
     code: 'SEQ-1',
     title: 'Confrontation dans la rue',
@@ -52,26 +58,26 @@ export default function CreateSequenceForm({ onCancel, editMode = false, sequenc
   const [showSuccess, setShowSuccess] = useState(false)
 
   // Charger les données en mode édition
+  // Charger les données en mode édition depuis Supabase
   useEffect(() => {
-    if (editMode && sequenceId) {
-      const sequence = sessionStore.getSequence(sequenceId)
+    if (editMode && sequenceId && sequences.length > 0) {
+      const sequence = sequences.find(s => s.id === sequenceId)
       if (sequence) {
-        sessionStore.setCurrentSequence(sequence.id)
         setFormData({
-          code: sequence.code,
+          code: sequence.code || 'SEQ-1',
           title: sequence.title,
-          colorId: sequence.colorId,
-          status: sequence.status,
-          location: sequence.location,
-          summary: sequence.summary,
-          preMintage: sequence.preMintage,
-          ett: sequence.ett,
-          effet: sequence.effet,
-          type: sequence.type
+          colorId: sequence.color_id || 'blue',
+          status: sequence.status || 'A validé',
+          location: sequence.location || '',
+          summary: sequence.summary || '',
+          preMintage: sequence.pre_montage || '00:00',
+          ett: sequence.ett || '00:00',
+          effet: sequence.time_of_day || 'JOUR',
+          type: sequence.location_type || 'INT'
         })
       }
     }
-  }, [editMode, sequenceId])
+  }, [editMode, sequenceId, sequences])
 
   const currentIndex = STEPS.indexOf(currentStep)
 
@@ -115,73 +121,136 @@ export default function CreateSequenceForm({ onCancel, editMode = false, sequenc
     console.log('======================')
   }
 
-  const handleSubmit = (e?: React.FormEvent) => {
+  const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault()
     
+    const isEditing = editMode && sequenceId
+    const loadingToast = toast.loading(isEditing ? 'Modification de la séquence...' : 'Création de la séquence...')
+    
     try {
-      // Récupérer la séquence courante avec tous ses décors et scènes
-      const currentSequence = sessionStore.getCurrentSequence()
-      
-      if (currentSequence) {
-        // Mettre à jour les données générales de la séquence existante
-        const updatedSequence = sessionStore.updateSequence(currentSequence.id, {
-          code: formData.code,
+      // Mode édition : mettre à jour une séquence existante
+      if (editMode && sequenceId && updateSequence) {
+        const updatedSequence = await updateSequence(sequenceId, {
           title: formData.title,
-          colorId: formData.colorId,
+          color_id: formData.colorId,
           status: formData.status as any,
           location: formData.location,
           summary: formData.summary,
-          preMintage: formData.preMintage,
+          pre_montage: formData.preMintage,
           ett: formData.ett,
-          effet: formData.effet as any,
-          type: formData.type as any
+          time_of_day: formData.effet as any,
+          location_type: formData.type as any
         })
         
         if (updatedSequence) {
+          toast.success(`Séquence "${formData.title}" modifiée avec succès`, {
+            id: loadingToast,
+          })
           setShowSuccess(true)
-          const stats = sessionStore.getSequenceStats(updatedSequence.id)
-          console.log('Séquence créée/mise à jour:', {
-            ...updatedSequence,
-            totalDecors: stats.decorsCount,
-            totalScenes: stats.scenesCount
+          console.log('Séquence mise à jour:', updatedSequence)
+          
+          setTimeout(() => {
+            setShowSuccess(false)
+            // Ne pas rediriger pour permettre l'édition des décors/scènes
+          }, 1000)
+        }
+      }
+      // Mode création : créer une nouvelle séquence
+      else if (project?.id && createSequence) {
+        const newSequence = await createSequence({
+          project_id: project.id,
+          title: formData.title,
+          color_id: formData.colorId,
+          status: formData.status as any,
+          location: formData.location,
+          summary: formData.summary,
+          pre_montage: formData.preMintage,
+          ett: formData.ett,
+          time_of_day: formData.effet as any,
+          location_type: formData.type as any
+        })
+        
+        if (newSequence) {
+          setCreatedSequenceId(newSequence.id) // Permettre l'accès aux décors/scènes
+          toast.success(`Séquence "${formData.title}" créée avec succès`, {
+            id: loadingToast,
+          })
+          setShowSuccess(true)
+          console.log('Nouvelle séquence créée:', newSequence)
+          
+          setTimeout(() => {
+            setShowSuccess(false)
+            // Ne pas rediriger automatiquement
+          }, 1000)
+        }
+      }
+      // Fallback sur sessionStore si nécessaire
+      else {
+        const currentSequence = sessionStore.getCurrentSequence()
+        
+        if (currentSequence) {
+          const updatedSequence = sessionStore.updateSequence(currentSequence.id, {
+            code: formData.code,
+            title: formData.title,
+            colorId: formData.colorId,
+            status: formData.status as any,
+            location: formData.location,
+            summary: formData.summary,
+            preMintage: formData.preMintage,
+            ett: formData.ett,
+            effet: formData.effet as any,
+            type: formData.type as any
           })
           
-          // Simuler la sauvegarde et rediriger
+          if (updatedSequence) {
+            setShowSuccess(true)
+            const stats = sessionStore.getSequenceStats(updatedSequence.id)
+            console.log('Séquence créée/mise à jour:', {
+              ...updatedSequence,
+              totalDecors: stats.decorsCount,
+              totalScenes: stats.scenesCount
+            })
+            
+            setTimeout(() => {
+              setShowSuccess(false)
+              router.push('/sequences')
+            }, 1000)
+          }
+        } else {
+          const newSequence = sessionStore.createSequence({
+            code: formData.code,
+            title: formData.title,
+            colorId: formData.colorId,
+            status: formData.status as any,
+            location: formData.location,
+            summary: formData.summary,
+            preMintage: formData.preMintage,
+            ett: formData.ett,
+            effet: formData.effet as any,
+            type: formData.type as any
+          })
+          
+          setShowSuccess(true)
+          console.log('Nouvelle séquence créée:', newSequence)
+          
           setTimeout(() => {
             setShowSuccess(false)
             router.push('/sequences')
           }, 1000)
         }
-      } else {
-        // Créer une nouvelle séquence si aucune n'existe
-        const newSequence = sessionStore.createSequence({
-          code: formData.code,
-          title: formData.title,
-          colorId: formData.colorId,
-          status: formData.status as any,
-          location: formData.location,
-          summary: formData.summary,
-          preMintage: formData.preMintage,
-          ett: formData.ett,
-          effet: formData.effet as any,
-          type: formData.type as any
-        })
-        
-        setShowSuccess(true)
-        console.log('Nouvelle séquence créée:', newSequence)
-        
-        setTimeout(() => {
-          setShowSuccess(false)
-          router.push('/sequences')
-        }, 1000)
       }
     } catch (error) {
-      console.error('Erreur lors de la création de la séquence:', error)
-      alert('Erreur lors de la création de la séquence. Vérifiez la console pour plus de détails.')
+      console.error('Erreur lors de la sauvegarde de la séquence:', error)
+      toast.error('Erreur lors de la sauvegarde de la séquence', {
+        id: loadingToast,
+      })
     }
   }
 
   const renderStepContent = () => {
+    // Utiliser l'ID de séquence créée ou fourni en prop
+    const currentSequenceId = createdSequenceId || sequenceId
+    
     switch (currentStep) {
       case "Général":
         return (
@@ -189,7 +258,7 @@ export default function CreateSequenceForm({ onCancel, editMode = false, sequenc
             formData={formData} 
             setFormData={setFormData}
             showSuccess={showSuccess}
-            sequenceId={currentSequence?.id}
+            sequenceId={currentSequenceId}
           />
         )
       case "Rôle":
@@ -199,15 +268,15 @@ export default function CreateSequenceForm({ onCancel, editMode = false, sequenc
       case "Accessoire":
         return <AccessoireStep />
       case "Effets spéciaux":
-        return <EffetsSpeciauxStep sequenceId={currentSequence?.id || ''} />
+        return <EffetsSpeciauxStep sequenceId={currentSequenceId || ''} />
       case "Équipe technique":
         return <EquipesTechniquesStep />
       case "Son":
-        return <SonStep sequenceId={currentSequence?.id || ''} />
+        return <SonStep sequenceId={currentSequenceId || ''} />
       case "Machinerie":
-        return <MachinerieStep sequenceId={currentSequence?.id || ''} />
+        return <MachinerieStep sequenceId={currentSequenceId || ''} />
       default:
-        return <GeneralStep formData={formData} setFormData={setFormData} showSuccess={showSuccess} sequenceId={currentSequence?.id} />
+        return <GeneralStep formData={formData} setFormData={setFormData} showSuccess={showSuccess} sequenceId={currentSequenceId} />
     }
   }
 
@@ -239,6 +308,7 @@ export default function CreateSequenceForm({ onCancel, editMode = false, sequenc
             onPrev={goPrev}
             onNext={goNext}
             onSubmit={handleSubmit}
+            editMode={editMode}
           />
         </div>
       </div>

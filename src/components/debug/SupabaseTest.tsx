@@ -1,63 +1,89 @@
-// Composant de test pour vérifier la connexion Supabase
-// src/components/debug/SupabaseTest.tsx
-
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import Button from '@/components/ui/Button'
 
 export default function SupabaseTest() {
-  const [connectionStatus, setConnectionStatus] = useState<'testing' | 'success' | 'error'>('testing')
-  const [projectCount, setProjectCount] = useState<number>(0)
-  const [error, setError] = useState<string | null>(null)
+  const [status, setStatus] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
 
-  useEffect(() => {
-    const testConnection = async () => {
-      try {
-        // Test simple : compter les projets
-        const { data, error, count } = await supabase
-          .from('projects')
-          .select('*', { count: 'exact', head: true })
-
-        if (error) {
-          throw error
-        }
-
-        setProjectCount(count || 0)
-        setConnectionStatus('success')
-      } catch (err) {
-        console.error('Erreur de connexion Supabase:', err)
-        setError(err instanceof Error ? err.message : 'Erreur inconnue')
-        setConnectionStatus('error')
-      }
+  const testConnection = async () => {
+    setIsLoading(true)
+    setStatus('Test de connexion...')
+    
+    try {
+      const { data, error } = await supabase.from('projects').select('count').limit(1)
+      if (error) throw error
+      setStatus('✅ Connexion Supabase OK')
+    } catch (error) {
+      setStatus(`❌ Erreur connexion: ${error}`)
     }
+    setIsLoading(false)
+  }
 
-    testConnection()
-  }, [])
+  const testDecorsTable = async () => {
+    setIsLoading(true)
+    setStatus('Test table decors...')
+    
+    try {
+      const { data, error } = await supabase.from('decors').select('*').limit(5)
+      if (error) {
+        setStatus(`❌ Erreur table decors: ${error.message}`)
+      } else {
+        setStatus(`✅ Table decors OK - ${data.length} enregistrements trouvés`)
+      }
+    } catch (error) {
+      setStatus(`❌ Erreur: ${error}`)
+    }
+    setIsLoading(false)
+  }
+
+  const testScenesTable = async () => {
+    setIsLoading(true)
+    setStatus('Test table scenes...')
+    
+    try {
+      const { data, error } = await supabase.from('scenes').select('*').limit(5)
+      if (error) {
+        setStatus(`❌ Erreur table scenes: ${error.message}`)
+      } else {
+        setStatus(`✅ Table scenes OK - ${data.length} enregistrements trouvés`)
+      }
+    } catch (error) {
+      setStatus(`❌ Erreur: ${error}`)
+    }
+    setIsLoading(false)
+  }
 
   return (
-    <div className="fixed top-4 right-4 bg-white p-4 rounded-lg shadow-lg border z-50">
-      <h3 className="font-bold text-sm mb-2">🔍 Test Supabase</h3>
+    <div className="bg-red-600 p-4 rounded-lg text-white space-y-3 border-2 border-yellow-400">
+      <h3 className="font-bold text-lg">🔧 DIAGNOSTIC SUPABASE</h3>
       
-      {connectionStatus === 'testing' && (
-        <div className="text-blue-600">
-          <div className="animate-spin w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full inline-block mr-2"></div>
-          Test en cours...
+      <div className="space-y-2">
+        <Button onClick={testConnection} disabled={isLoading} className="w-full">
+          1. Tester connexion
+        </Button>
+        
+        <Button onClick={testDecorsTable} disabled={isLoading} className="w-full">
+          2. Tester table decors
+        </Button>
+        
+        <Button onClick={testScenesTable} disabled={isLoading} className="w-full">
+          3. Tester table scenes
+        </Button>
+      </div>
+
+      {status && (
+        <div className={`p-3 rounded font-mono text-sm ${
+          status.includes('❌') ? 'bg-red-900' : 'bg-green-900'
+        }`}>
+          {status}
         </div>
       )}
       
-      {connectionStatus === 'success' && (
-        <div className="text-green-600">
-          ✅ Connexion OK<br/>
-          <span className="text-sm">Projets: {projectCount}</span>
-        </div>
-      )}
-      
-      {connectionStatus === 'error' && (
-        <div className="text-red-600">
-          ❌ Erreur<br/>
-          <span className="text-xs">{error}</span>
-        </div>
+      {isLoading && (
+        <div className="text-center">Chargement...</div>
       )}
     </div>
   )
