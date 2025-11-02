@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react'
 import { Accessoire, Role } from '@/lib/types-clean'
 import Button from '@/components/ui/Button'
 
@@ -9,9 +9,14 @@ interface AccessoireFormProps {
   roles: Role[] // Liste des rôles disponibles pour le dropdown
   onSave: (accessoireData: Omit<Accessoire, 'id' | 'createdAt'>) => void
   onCancel: () => void
+  submitTrigger?: number
 }
 
-export default function AccessoireForm({ accessoire, roles, onSave, onCancel }: AccessoireFormProps) {
+export interface AccessoireFormRef {
+  submitForm: () => void
+}
+
+const AccessoireForm = forwardRef<AccessoireFormRef, AccessoireFormProps>(({ accessoire, roles, onSave, onCancel, submitTrigger }, ref) => {
   const [formData, setFormData] = useState<Omit<Accessoire, 'id' | 'createdAt'>>({
     nomAccessoire: '',
     roleId: '',
@@ -39,13 +44,30 @@ export default function AccessoireForm({ accessoire, roles, onSave, onCancel }: 
     }
   }, [accessoire])
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
     onSave({
       ...formData,
       roleId: formData.roleId || undefined // Convertir string vide en undefined
     })
   }
+
+  // Exposer la méthode submitForm via ref
+  useImperativeHandle(ref, () => ({
+    submitForm: () => handleSubmit()
+  }))
+
+  // Déclencher le submit quand submitTrigger change
+  const prevSubmitTrigger = useRef(submitTrigger)
+  useEffect(() => {
+    if (submitTrigger && submitTrigger !== prevSubmitTrigger.current) {
+      prevSubmitTrigger.current = submitTrigger
+      onSave({
+        ...formData,
+        roleId: formData.roleId || undefined
+      })
+    }
+  }, [submitTrigger, formData, onSave])
 
   const updateField = (field: keyof typeof formData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -134,4 +156,8 @@ export default function AccessoireForm({ accessoire, roles, onSave, onCancel }: 
       </div>
     </form>
   )
-}
+})
+
+AccessoireForm.displayName = 'AccessoireForm'
+
+export default AccessoireForm

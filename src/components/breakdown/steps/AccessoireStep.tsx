@@ -1,41 +1,52 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, forwardRef, useImperativeHandle, useRef } from 'react'
 import { Accessoire, Role } from '@/lib/types-clean'
-import { sessionStore } from '@/lib/sessionStore-mock'
+import { useAccessoires } from '@/hooks/useAccessoires'
+import { useRoles } from '@/hooks/useRoles'
+import { AccessoiresService } from '@/services/AccessoiresService'
+import { adaptSupabaseToRole } from '@/services/RolesService'
 import { useStepForm } from '@/hooks/useStepForm'
 import AccessoiresList from './accessoires/AccessoiresList'
-import AccessoireForm from './accessoires/AccessoireForm'
+import AccessoireForm, { AccessoireFormRef } from './accessoires/AccessoireForm'
+import toast from 'react-hot-toast'
 
-export default function AccessoireStep() {
-  const [accessoires, setAccessoires] = useState<Accessoire[]>([])
-  const [roles, setRoles] = useState<Role[]>([])
+interface AccessoireStepProps {
+  sequenceId: string
+}
+
+export interface AccessoireStepRef {
+  handleSubmit: () => Promise<boolean>
+}
+
+export default forwardRef<AccessoireStepRef, AccessoireStepProps>(function AccessoireStep({ sequenceId }, ref) {
+  const { accessoires, isLoading, createAccessoire, updateAccessoire, deleteAccessoire } = useAccessoires(sequenceId)
+  const { roles, isLoading: rolesLoading } = useRoles(sequenceId)
   const [viewMode, setViewMode] = useState<'list' | 'form'>('list')
   const [editingAccessoire, setEditingAccessoire] = useState<Accessoire | null>(null)
   const [roleNames, setRoleNames] = useState<{ [roleId: string]: string }>({})
   const { enterFormMode, exitFormMode } = useStepForm()
+  const formRef = useRef<AccessoireFormRef | null>(null)
 
-  const loadData = () => {
-    const currentSequence = sessionStore.getCurrentSequence()
-    if (currentSequence) {
-      const sequenceAccessoires = sessionStore.getAccessoires(currentSequence.id)
-      const sequenceRoles = sessionStore.getRoles(currentSequence.id)
-      
-      setAccessoires(sequenceAccessoires)
-      setRoles(sequenceRoles)
-      
-      // Créer un map roleId -> nom pour l'affichage
+  // Exposer les méthodes via ref pour le footer
+  useImperativeHandle(ref, () => ({
+    handleSubmit: async () => {
+      // Pour les accessoires, pas besoin de validation spécifique
+      return true
+    }
+  }))
+
+  // Charger les noms des rôles quand les rôles changent
+  useEffect(() => {
+    if (roles.length > 0) {
       const names: { [roleId: string]: string } = {}
-      sequenceRoles.forEach(role => {
-        names[role.id] = role.nomRole
+      roles.forEach(role => {
+        const adaptedRole = adaptSupabaseToRole(role)
+        names[adaptedRole.id] = adaptedRole.nomRole
       })
       setRoleNames(names)
     }
-  }
-
-  useEffect(() => {
-    loadData()
-  }, [])
+  }, [roles])
 
   const handleCreateAccessoire = () => {
     setEditingAccessoire(null)
@@ -45,7 +56,9 @@ export default function AccessoireStep() {
     enterFormMode(
       () => {
         // Cette fonction sera appelée quand on clique sur "Créer" dans le footer
-        console.log('Submit accessoire form')
+        if (formRef.current) {
+          formRef.current.submitForm()
+        }
       },
       () => {
         // Fonction d'annulation - le contexte gère automatiquement la sortie du mode formulaire
@@ -64,7 +77,9 @@ export default function AccessoireStep() {
     enterFormMode(
       () => {
         // Cette fonction sera appelée quand on clique sur "Modifier" dans le footer
-        console.log('Submit accessoire form')
+        if (formRef.current) {
+          formRef.current.submitForm()
+        }
       },
       () => {
         // Fonction d'annulation - le contexte gère automatiquement la sortie du mode formulaire
@@ -75,32 +90,67 @@ export default function AccessoireStep() {
     )
   }
 
-  const handleDeleteAccessoire = (accessoireId: string) => {
-    const currentSequence = sessionStore.getCurrentSequence()
-    if (!currentSequence) return
-
-    sessionStore.deleteAccessoire(currentSequence.id, accessoireId)
-    loadData()
+  const handleDeleteAccessoire = async (accessoireId: string) => {
+    try {
+      const success = await deleteAccessoire(accessoireId)
+      
+      if (success) {
+        toast.success('Accessoire supprimé avec succès', {
+          style: { background: '#374151', color: '#fff' }
+        })
+      }
+    } catch (error) {
+      console.error('Erreur lors de la suppression de l\'accessoire:', error)
+      toast.error('Erreur lors de la suppression de l\'accessoire', {
+        style: { background: '#374151', color: '#fff' }
+      })
+    }
   }
 
-  const handleSaveAccessoire = (accessoireData: Omit<Accessoire, 'id' | 'createdAt'>) => {
-    const currentSequence = sessionStore.getCurrentSequence()
-    if (!currentSequence) return
+  const handleSaveAccessoire = async (accessoireData: Omit<Accessoire, 'id' | 'createdAt'>) => {
+    try {
+      if (editingAccessoire) {
+        // Mise à jour
+        const result = await updateAccessoire(editingAccessoire.id, {
+          nom_accessoire: accessoireData.nomAccessoire,
+          role_id: accessoireData.roleId || undefined,
+          statut: accessoireData.statut,
+          notes_accessoire: accessoireData.notesAccessoire || undefined
+        })
 
-    if (editingAccessoire) {
-      // Mise à jour
-      sessionStore.updateAccessoire(currentSequence.id, editingAccessoire.id, accessoireData)
-    } else {
-      // Création
-      sessionStore.createAccessoire(currentSequence.id, accessoireData)
+        if (result) {
+          toast.success('Accessoire modifié avec succès', {
+            style: { background: '#374151', color: '#fff' }
+          })
+        }
+      } else {
+        // Création
+        const result = await createAccessoire({
+          sequence_id: sequenceId,
+          nom_accessoire: accessoireData.nomAccessoire,
+          role_id: accessoireData.roleId || undefined,
+          statut: accessoireData.statut,
+          notes_accessoire: accessoireData.notesAccessoire || undefined
+        })
+
+        if (result) {
+          toast.success('Accessoire créé avec succès', {
+            style: { background: '#374151', color: '#fff' }
+          })
+        }
+      }
+
+      setViewMode('list')
+      setEditingAccessoire(null)
+      
+      // Sortir du mode formulaire
+      exitFormMode()
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde de l\'accessoire:', error)
+      toast.error('Erreur lors de la sauvegarde de l\'accessoire', {
+        style: { background: '#374151', color: '#fff' }
+      })
     }
-
-    loadData()
-    setViewMode('list')
-    setEditingAccessoire(null)
-    
-    // Sortir du mode formulaire
-    exitFormMode()
   }
 
   const handleBackToList = () => {
@@ -109,16 +159,32 @@ export default function AccessoireStep() {
     // Le contexte gère automatiquement la sortie du mode formulaire via triggerCancel
   }
 
+  // Adapter les accessoires Supabase vers l'interface frontend
+  const adaptedAccessoires: Accessoire[] = accessoires.map(accessoire => 
+    AccessoiresService.adaptSupabaseToAccessoire(accessoire)
+  )
+
+  // Adapter les rôles Supabase vers l'interface frontend
+  const adaptedRoles: Role[] = roles.map(role => adaptSupabaseToRole(role))
+
+  if (isLoading || rolesLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <p className="text-gray-400 text-sm">Configuration des accessoires et props</p>
+        <p className="text-gray-400 text-sm">{viewMode === 'list' ? 'Gestion des accessoires' : 'Modifier l\'accessoire'}</p>
         <div className="w-full h-px bg-blue-500"></div>
       </div>
 
       {viewMode === 'list' ? (
         <AccessoiresList
-          accessoires={accessoires}
+          accessoires={adaptedAccessoires}
           onCreateAccessoire={handleCreateAccessoire}
           onEditAccessoire={handleEditAccessoire}
           onDeleteAccessoire={handleDeleteAccessoire}
@@ -126,12 +192,13 @@ export default function AccessoireStep() {
         />
       ) : (
         <AccessoireForm
+          ref={formRef}
           accessoire={editingAccessoire}
-          roles={roles}
+          roles={adaptedRoles}
           onSave={handleSaveAccessoire}
           onCancel={handleBackToList}
         />
       )}
     </div>
   )
-}
+})

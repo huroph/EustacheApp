@@ -19,7 +19,7 @@ export default function StepHeader<T extends string>({ current, steps, onSelect,
   }
 
   return (
-    <div className="flex items-center justify-between mb-6 w-full">
+    <div className="flex items-center justify-between  w-full">
       <div className="relative">
         {/* Dropdown Toggle */}
         <button
