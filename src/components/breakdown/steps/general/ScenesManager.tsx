@@ -50,50 +50,49 @@ export default function ScenesManager({ sequenceId, scenes, decors, onUpdate }: 
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-gray-400 text-sm">Scènes ({scenes.length})</h3>
+        <h3 className="text-white font-medium">Scènes ({scenes.length})</h3>
         <button 
           onClick={() => setIsAddingScene(true)}
           disabled={decors.length === 0}
-          className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm flex items-center space-x-2"
+          className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white px-4 py-2 rounded text-sm flex items-center space-x-2 transition-colors"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
-          <span>Ajouter</span>
+          <span>+ Ajouter</span>
         </button>
       </div>
 
       {decors.length === 0 && (
-        <div className="bg-orange-600/20 border border-orange-500 rounded-lg p-4">
-          <p className="text-orange-300 text-sm">
-            Ajoutez d'abord des décors pour pouvoir créer des scènes.
-          </p>
+        <div className="text-center py-8 text-gray-400">
+          <p className="mb-2">Vous devez d'abord ajouter des décors</p>
+          <p className="text-sm">Allez dans l'onglet "Décors" pour commencer</p>
         </div>
       )}
 
       {/* Formulaire d'ajout */}
       {isAddingScene && (
-        <div className="bg-slate-700 border-2 border-purple-500 rounded-lg p-4">
+        <div className="bg-gray-800 border border-gray-600 rounded-lg p-4">
           <h4 className="text-white font-medium mb-4">Nouvelle scène</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block text-xs text-gray-400 mb-1">Numéro *</label>
+              <label className="block text-gray-300 text-sm mb-1">Numéro *</label>
               <input
                 type="text"
                 value={newScene.numero}
                 onChange={(e) => setNewScene(prev => ({ ...prev, numero: e.target.value }))}
                 placeholder="Numéro de la scène..."
-                className="w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded text-white text-sm"
+                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white"
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-400 mb-1">Décor *</label>
+              <label className="block text-gray-300 text-sm mb-1">Décor *</label>
               <select
                 value={newScene.decorId}
                 onChange={(e) => setNewScene(prev => ({ ...prev, decorId: e.target.value }))}
-                className="w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded text-white text-sm"
+                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white"
               >
                 <option value="">Sélectionner un décor</option>
                 {decors.map(decor => (
@@ -103,21 +102,21 @@ export default function ScenesManager({ sequenceId, scenes, decors, onUpdate }: 
             </div>
           </div>
           <div className="mb-4">
-            <label className="block text-xs text-gray-400 mb-1">Description</label>
+            <label className="block text-gray-300 text-sm mb-1">Description</label>
             <textarea
               value={newScene.description}
               onChange={(e) => setNewScene(prev => ({ ...prev, description: e.target.value }))}
               placeholder="Description de la scène..."
               rows={3}
-              className="w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded text-white text-sm"
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white"
             />
           </div>
           <div className="mb-4">
-            <label className="block text-xs text-gray-400 mb-1">Statut</label>
+            <label className="block text-gray-300 text-sm mb-1">Statut</label>
             <select
               value={newScene.status}
               onChange={(e) => setNewScene(prev => ({ ...prev, status: e.target.value as any }))}
-              className="w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded text-white text-sm"
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white"
             >
               {statusOptions.map(status => (
                 <option key={status} value={status}>{status}</option>
@@ -128,7 +127,7 @@ export default function ScenesManager({ sequenceId, scenes, decors, onUpdate }: 
             <button
               onClick={handleAddScene}
               disabled={!newScene.numero.trim() || !newScene.decorId}
-              className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white px-4 py-2 rounded text-sm"
+              className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white px-4 py-2 rounded transition-colors"
             >
               Créer
             </button>
@@ -137,7 +136,7 @@ export default function ScenesManager({ sequenceId, scenes, decors, onUpdate }: 
                 setIsAddingScene(false)
                 setNewScene({ numero: '', decorId: '', description: '', status: 'A validé' })
               }}
-              className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm"
+              className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded transition-colors"
             >
               Annuler
             </button>
@@ -145,19 +144,25 @@ export default function ScenesManager({ sequenceId, scenes, decors, onUpdate }: 
         </div>
       )}
 
-      <div className="space-y-4">
-        {scenes.map((scene) => (
-          <div key={scene.id} className="bg-slate-700 border border-slate-600 rounded-lg p-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-              <div>
-                <label className="block text-xs text-gray-400 mb-1">Numéro</label>
-                <input
-                  type="text"
-                  value={scene.numero}
-                  onChange={(e) => handleUpdateScene(scene.id, 'numero', e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded text-white text-sm"
-                />
-              </div>
+      {scenes.length === 0 ? (
+        <div className="text-center py-12 text-gray-400">
+          <div className="text-4xl mb-4">🎬</div>
+          <p>Aucune scène ajoutée pour cette séquence</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {scenes.map((scene) => (
+            <div key={scene.id} className="bg-gray-800 border border-gray-600 rounded-lg p-4 hover:border-gray-500 transition-colors">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                <div>
+                  <label className="block text-gray-300 text-sm mb-1">Numéro</label>
+                  <input
+                    type="text"
+                    value={scene.numero}
+                    onChange={(e) => handleUpdateScene(scene.id, 'numero', e.target.value)}
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white"
+                  />
+                </div>
 
               <div>
                 <label className="block text-xs text-gray-400 mb-1">Décor</label>
@@ -214,19 +219,8 @@ export default function ScenesManager({ sequenceId, scenes, decors, onUpdate }: 
             </div>
           </div>
         ))}
-
-        {scenes.length === 0 && !isAddingScene && decors.length > 0 && (
-          <div className="text-center py-8 text-gray-400">
-            <p>Aucune scène ajoutée</p>
-            <button 
-              onClick={() => setIsAddingScene(true)}
-              className="mt-2 text-purple-400 hover:text-purple-300"
-            >
-              Ajouter la première scène
-            </button>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }

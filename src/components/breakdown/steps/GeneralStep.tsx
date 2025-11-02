@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react'
 import { sessionStore, type Decor, type Scene } from '@/lib/sessionData'
 import InformationsForm from './general/InformationsForm'
-import DecorsManager from './general/DecorsManager'
-import ScenesManager from './general/ScenesManager'
+import DecorStep from './general/DecorStep'
+import SceneStep from './general/SceneStep'
 
 interface GeneralStepProps {
   formData: {
@@ -63,18 +63,16 @@ export default function GeneralStep({ formData, setFormData, showSuccess }: Gene
       
       case "Décors":
         return (
-          <DecorsManager 
+          <DecorStep 
             sequenceId={currentSequence?.id || ''}
-            decors={decors}
             onUpdate={loadData}
           />
         )
       
       case "Scènes":
         return (
-          <ScenesManager 
+          <SceneStep 
             sequenceId={currentSequence?.id || ''}
-            scenes={scenes}
             decors={decors}
             onUpdate={loadData}
           />
@@ -88,7 +86,7 @@ export default function GeneralStep({ formData, setFormData, showSuccess }: Gene
   return (
     <div className="space-y-6">
       {/* Sub-step Navigation */}
-      <div className="flex space-x-1 bg-slate-700 rounded-lg p-1">
+      <div className="flex space-x-1 bg-gray-800 rounded-lg p-1">
         {GENERAL_SUB_STEPS.map((subStep) => (
           <button
             key={subStep}
@@ -97,7 +95,7 @@ export default function GeneralStep({ formData, setFormData, showSuccess }: Gene
               flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all
               ${currentSubStep === subStep 
                 ? 'bg-blue-600 text-white shadow-lg' 
-                : 'text-gray-300 hover:text-white hover:bg-slate-600'
+                : 'text-gray-400 hover:text-white hover:bg-gray-700'
               }
             `}
           >
@@ -113,8 +111,8 @@ export default function GeneralStep({ formData, setFormData, showSuccess }: Gene
 
       {/* Summary if data exists */}
       {(decors.length > 0 || scenes.length > 0) && (
-        <div className="bg-slate-700 rounded-lg p-4 border border-slate-600">
-          <h3 className="text-gray-300 font-medium mb-3">Résumé</h3>
+        <div className="bg-gray-800 rounded-lg p-4 border border-gray-600">
+          <h3 className="text-white font-medium mb-3">Résumé</h3>
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <span className="text-gray-400">Décors:</span>

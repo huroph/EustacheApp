@@ -55,7 +55,7 @@ export default function InformationsForm({ formData, setFormData, showSuccess }:
               type="text"
               value={formData.title}
               onChange={(e) => setFormData((prev: any) => ({ ...prev, title: e.target.value }))}
-              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
           </div>
@@ -69,7 +69,7 @@ export default function InformationsForm({ formData, setFormData, showSuccess }:
               type="text"
               value={formData.code}
               onChange={(e) => setFormData((prev: any) => ({ ...prev, code: e.target.value }))}
-              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
         </div>
