@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import { useCurrentProject } from '@/lib/currentProject-supabase'
 import { useSequences } from '@/hooks/useSequences'
@@ -36,7 +36,21 @@ export default function GeneralStep({ formData, setFormData, showSuccess, sequen
   const [activeTab, setActiveTab] = useState<'informations' | 'decors' | 'scenes'>('informations')
   const { project } = useCurrentProject()
   const { createSequence, isLoading } = useSequences()
-  const { decors } = useDecors(sequenceId || '')
+  const { decors, refetch: refetchDecors } = useDecors(sequenceId || '')
+
+  // Debug : vérifier les décors chargés
+  useEffect(() => {
+    console.log('GeneralStep - décors chargés :', decors.length, decors)
+  }, [decors])
+
+  // Debug : changement d'onglet et rafraîchissement des décors si on va sur scènes
+  useEffect(() => {
+    console.log('GeneralStep - onglet actif :', activeTab)
+    if (activeTab === 'scenes' && sequenceId) {
+      console.log('Rafraîchissement des décors pour l\'onglet scènes')
+      refetchDecors()
+    }
+  }, [activeTab, sequenceId, refetchDecors])
 
   // Adaptateur pour convertir les décors Supabase vers le type Decor de l'interface
   const adaptedDecors = decors.map(d => ({

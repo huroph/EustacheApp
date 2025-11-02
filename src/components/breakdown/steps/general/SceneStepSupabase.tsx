@@ -42,6 +42,11 @@ export default function SceneStepSupabase({ sequenceId, decors, onUpdate }: Scen
   // Convertir les scènes Supabase vers le format de l'interface
   const scenes: Scene[] = supabaseScenes.map(adaptSupabaseToScene)
 
+  // Debug : vérifier que les décors sont bien reçus
+  useEffect(() => {
+    console.log('SceneStepSupabase - décors reçus :', decors.length, decors)
+  }, [decors])
+
   useEffect(() => {
     if (onUpdate) {
       onUpdate()
@@ -49,7 +54,13 @@ export default function SceneStepSupabase({ sequenceId, decors, onUpdate }: Scen
   }, [scenes, onUpdate])
 
   const handleCreateScene = () => {
-    if (decors.length === 0) return
+    console.log('handleCreateScene appelé - nombre de décors :', decors.length)
+    if (decors.length === 0) {
+      toast.error('Aucun décor disponible. Créez d\'abord un décor.', {
+        style: { background: '#374151', color: '#fff' }
+      })
+      return
+    }
     
     setEditingScene(null)
     setViewMode('form')
