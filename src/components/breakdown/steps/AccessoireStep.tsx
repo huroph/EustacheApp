@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Accessoire, Role, sessionStore } from '@/lib/sessionData'
+import { Accessoire, Role } from '@/lib/types-clean'
+import { sessionStore } from '@/lib/sessionStore-mock'
 import { useStepForm } from '@/hooks/useStepForm'
 import AccessoiresList from './accessoires/AccessoiresList'
 import AccessoireForm from './accessoires/AccessoireForm'

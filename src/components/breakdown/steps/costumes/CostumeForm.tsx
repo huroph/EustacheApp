@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Costume, Role } from '@/lib/sessionData'
+import { Costume, Role } from '@/lib/types-clean'
 import Button from '@/components/ui/Button'
 
 interface CostumeFormProps {

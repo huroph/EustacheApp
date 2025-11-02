@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Scene, Decor, sessionStore } from '@/lib/sessionData'
+import { Scene, Decor } from '@/lib/types-clean'
+import { sessionStore } from '@/lib/sessionStore-mock'
 import { useStepForm } from '@/hooks/useStepForm'
 import ScenesList from './ScenesList'
 import SceneForm from './SceneForm'

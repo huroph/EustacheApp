@@ -1,6 +1,6 @@
 'use client'
 
-import { Decor } from '@/lib/sessionData'
+import { Decor } from '@/lib/types-clean'
 import Button from '@/components/ui/Button'
 
 interface DecorsListProps {

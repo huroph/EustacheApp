@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Scene, Decor } from '@/lib/sessionData'
+import { Scene, Decor } from '@/lib/types-clean'
 
 interface SceneFormProps {
   scene?: Scene | null

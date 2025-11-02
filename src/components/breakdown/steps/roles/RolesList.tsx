@@ -1,6 +1,6 @@
 'use client'
 
-import { Role } from '@/lib/sessionData'
+import { Role } from '@/lib/types-clean'
 import Button from '@/components/ui/Button'
 
 interface RolesListProps {

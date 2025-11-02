@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { sessionStore, type Decor, type Scene } from '@/lib/sessionData'
+import { Decor, Scene } from '@/lib/types-clean'
+import { sessionStore } from '@/lib/sessionStore-mock'
 import InformationsForm from './general/InformationsForm'
 import DecorStep from './general/DecorStep'
 import SceneStep from './general/SceneStep'

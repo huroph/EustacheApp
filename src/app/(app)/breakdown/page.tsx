@@ -4,7 +4,7 @@
 import { useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCurrentProject } from '@/lib/currentProject'
-import { sessionStore } from '@/lib/sessionData'
+import { sessionStore } from '@/lib/sessionStore-mock'
 import { useSidebar } from '@/hooks/useSidebar'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'

@@ -1,6 +1,7 @@
 'use client'
 
-import { sessionStore, EffetSpecial } from '@/lib/sessionData'
+import { EffetSpecial } from '@/lib/types-clean'
+import { sessionStore } from '@/lib/sessionStore-mock'
 import { EffetsSpeciauxList } from './effets-speciaux/EffetsSpeciauxList'
 import { EffetsSpeciauxForm } from './effets-speciaux/EffetsSpeciauxForm'
 import { useStepForm } from '@/hooks/useStepForm'

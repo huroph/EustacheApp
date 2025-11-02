@@ -1,6 +1,6 @@
 'use client'
 
-import { Scene, Decor } from '@/lib/sessionData'
+import { Scene, Decor } from '@/lib/types-clean'
 import Button from '@/components/ui/Button'
 
 interface ScenesListProps {

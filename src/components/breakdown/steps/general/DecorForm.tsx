@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Decor } from '@/lib/sessionData'
+import { Decor } from '@/lib/types-clean'
 
 interface DecorFormProps {
   decor?: Decor | null

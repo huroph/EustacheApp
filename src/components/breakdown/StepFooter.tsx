@@ -1,7 +1,7 @@
 'use client'
 
 import Button from '@/components/ui/Button'
-import { sessionStore } from '@/lib/sessionData'
+import { sessionStore } from '@/lib/sessionStore-mock'
 import { useFooter } from '@/contexts/FooterContext'
 
 interface StepFooterProps {

@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Costume, Role, sessionStore } from '@/lib/sessionData'
+import { Costume, Role } from '@/lib/types-clean'
+import { sessionStore } from '@/lib/sessionStore-mock'
 import { useStepForm } from '@/hooks/useStepForm'
 import CostumesList from './costumes/CostumesList'
 import CostumeForm from './costumes/CostumeForm'

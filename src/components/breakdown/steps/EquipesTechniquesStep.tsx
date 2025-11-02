@@ -1,6 +1,7 @@
 'use client'
 
-import { sessionStore, EquipeTechnique } from '@/lib/sessionData'
+import { EquipeTechnique } from '@/lib/types-clean'
+import { sessionStore } from '@/lib/sessionStore-mock'
 import { EquipesTechniquesList } from './equipes-techniques/EquipesTechniquesList'
 import { EquipesTechniquesForm } from './equipes-techniques/EquipesTechniquesForm'
 import { useState, useEffect } from 'react'

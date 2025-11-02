@@ -1,6 +1,6 @@
 'use client'
 
-import { Costume } from '@/lib/sessionData'
+import { Costume } from '@/lib/types-clean'
 import Button from '@/components/ui/Button'
 
 interface CostumesListProps {

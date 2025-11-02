@@ -1,6 +1,7 @@
 'use client'
 
-import { sessionStore, MaterielSon } from '@/lib/sessionData'
+import { MaterielSon } from '@/lib/types-clean'
+import { sessionStore } from '@/lib/sessionStore-mock'
 import Button from '@/components/ui/Button'
 import { useState, useEffect } from 'react'
 

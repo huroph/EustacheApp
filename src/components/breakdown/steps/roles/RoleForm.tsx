@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Role } from '@/lib/sessionData'
+import { Role } from '@/lib/types-clean'
 import Button from '@/components/ui/Button'
 
 interface RoleFormProps {
@@ -104,20 +104,7 @@ export default function RoleForm({ role, onSave, onCancel, submitTrigger }: Role
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-white font-medium">
-          {role ? 'Modifier le rôle' : 'Créer un Roles'}
-        </h3>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="text-gray-400 hover:text-white"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
+      
 
       <div className="space-y-4">
         {/* Type et nom du rôle */}

@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCurrentProject } from '@/lib/currentProject'
-import { sessionStore } from '@/lib/sessionData'
+import { sessionStore } from '@/lib/sessionStore-mock'
 import SequenceCard from '@/components/sequences/SequenceCard'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'

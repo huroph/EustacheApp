@@ -1,6 +1,7 @@
 'use client'
 
-import { sessionStore, EffetSpecial } from '@/lib/sessionData'
+import { EffetSpecial } from '@/lib/types-clean'
+import { sessionStore } from '@/lib/sessionStore-mock'
 import Button from '@/components/ui/Button'
 import { useState, useEffect } from 'react'
 

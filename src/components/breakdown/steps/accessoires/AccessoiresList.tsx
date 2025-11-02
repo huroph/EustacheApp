@@ -1,6 +1,6 @@
 'use client'
 
-import { Accessoire } from '@/lib/sessionData'
+import { Accessoire } from '@/lib/types-clean'
 import Button from '@/components/ui/Button'
 
 interface AccessoiresListProps {

@@ -1,6 +1,7 @@
 'use client'
 
-import { sessionStore, Machinerie } from '@/lib/sessionData'
+import { Machinerie } from '@/lib/types-clean'
+import { sessionStore } from '@/lib/sessionStore-mock'
 import Button from '@/components/ui/Button'
 import { useState, useEffect } from 'react'
 

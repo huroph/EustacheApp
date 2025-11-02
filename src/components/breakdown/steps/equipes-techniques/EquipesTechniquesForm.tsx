@@ -1,6 +1,7 @@
 'use client'
 
-import { sessionStore, EquipeTechnique, SequenceFormData } from '@/lib/sessionData'
+import { EquipeTechnique, SequenceFormData } from '@/lib/types-clean'
+import { sessionStore } from '@/lib/sessionStore-mock'
 import Button from '@/components/ui/Button'
 import { useState, useEffect } from 'react'
 
@@ -106,18 +107,7 @@ export function EquipesTechniquesForm({ equipe, onCancel, onSuccess }: EquipesTe
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-white font-medium">
-          {equipe ? 'Modifier l\'équipe technique' : 'Nouvelle équipe technique'}
-        </h3>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onCancel}
-        >
-          ← Retour à la liste
-        </Button>
-      </div>
+      
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Nom */}
@@ -178,27 +168,61 @@ export function EquipesTechniquesForm({ equipe, onCancel, onSuccess }: EquipesTe
           {errors.type && <p className="text-red-400 text-sm mt-1">{errors.type}</p>}
         </div>
 
-        {/* Séquences assignées */}
+        {/* Contacts */}
+                {/* Address */}
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">
-            Séquences assignées
+          <label htmlFor="address" className="block text-sm font-medium text-gray-300 mb-1">
+            Address *
           </label>
-          <div className="space-y-2 max-h-32 overflow-y-auto border border-gray-600 rounded-lg p-3 bg-gray-800">
-            {availableSequences.map((sequence) => (
-              <label key={sequence.id} className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.sequences.includes(sequence.id)}
-                  onChange={() => toggleSequence(sequence.id)}
-                  className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:ring-2"
-                />
-                <span className="text-sm text-white">
-                  {sequence.code} - {sequence.title}
-                </span>
-              </label>
-            ))}
-          </div>
+          <input
+            type="text"
+            id="address"
+            value={formData.address}
+            onChange={(e) => handleChange('address', e.target.value)}
+            className={`w-full bg-gray-800 border rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 ${
+              errors.address ? 'border-red-500' : 'border-gray-600'
+            }`}
+            placeholder="Address"
+          />
+          {errors.address && <p className="text-red-400 text-sm mt-1">{errors.address}</p>}
         </div>
+        {/* mail */}
+        <div>
+          <label htmlFor="mail" className="block text-sm font-medium text-gray-300 mb-1">
+            Mail *
+          </label>
+          <input
+            type="text"
+            id="mail"
+            value={formData.mail}
+            onChange={(e) => handleChange('mail', e.target.value)}
+            className={`w-full bg-gray-800 border rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 ${
+              errors.mail ? 'border-red-500' : 'border-gray-600'
+            }`}
+            placeholder="Mail"
+          />
+          {errors.mail && <p className="text-red-400 text-sm mt-1">{errors.mail}</p>}
+        </div>
+        {/* phone */}
+        <div>
+          <label htmlFor="phone" className="block text-sm font-medium text-gray-300 mb-1">
+            Phone *
+          </label>
+          <input
+            type="text"
+            id="phone"
+            value={formData.phone}
+            onChange={(e) => handleChange('phone', e.target.value)}
+            className={`w-full bg-gray-800 border rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 ${
+              errors.phone ? 'border-red-500' : 'border-gray-600'
+            }`}
+            placeholder="Phone"
+          />
+          {errors.phone && <p className="text-red-400 text-sm mt-1">{errors.phone}</p>}
+        </div>
+
+
+        
 
         {/* Notes */}
         <div>

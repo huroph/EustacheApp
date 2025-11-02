@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { sessionStore } from '@/lib/sessionData'
+import { sessionStore } from '@/lib/sessionStore-mock'
 import { FooterProvider } from '@/contexts/FooterContext'
 import StepHeader from './StepHeader'
 import StepFooter from './StepFooter'

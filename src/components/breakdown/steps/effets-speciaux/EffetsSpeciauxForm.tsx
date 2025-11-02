@@ -1,6 +1,7 @@
 'use client'
 
-import { sessionStore, EffetSpecial } from '@/lib/sessionData'
+import { EffetSpecial } from '@/lib/types-clean'
+import { sessionStore } from '@/lib/sessionStore-mock'
 import Button from '@/components/ui/Button'
 import { useState, useEffect } from 'react'
 
@@ -69,18 +70,7 @@ export function EffetsSpeciauxForm({ sequenceId, effet, onCancel, onSuccess }: E
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-white font-medium">
-          {effet ? 'Modifier l\'effet spécial' : 'Créer un Effet Spécial'}
-        </h3>
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={onCancel}
-        >
-          ← Retour
-        </Button>
-      </div>
+     
 
       <div className="space-y-4">
         <div>
