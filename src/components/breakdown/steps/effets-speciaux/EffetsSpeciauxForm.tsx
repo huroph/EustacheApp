@@ -1,9 +1,10 @@
 'use client'
 
 import { EffetSpecial } from '@/lib/types-clean'
-import { sessionStore } from '@/lib/sessionStore-mock'
+import { useEffetsSpeciaux } from '@/hooks/useEffetsSpeciaux'
 import Button from '@/components/ui/Button'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, forwardRef, useImperativeHandle } from 'react'
+import toast from 'react-hot-toast'
 
 interface EffetsSpeciauxFormProps {
   sequenceId: string
@@ -12,7 +13,13 @@ interface EffetsSpeciauxFormProps {
   onSuccess: () => void
 }
 
-export function EffetsSpeciauxForm({ sequenceId, effet, onCancel, onSuccess }: EffetsSpeciauxFormProps) {
+export interface EffetsSpeciauxFormRef {
+  submitForm: () => void
+}
+
+export const EffetsSpeciauxForm = forwardRef<EffetsSpeciauxFormRef, EffetsSpeciauxFormProps>(function EffetsSpeciauxForm({ sequenceId, effet, onCancel, onSuccess }, ref) {
+  const { createEffetSpecial, updateEffetSpecial } = useEffetsSpeciaux(sequenceId)
+  
   const [formData, setFormData] = useState<{
     nom: string
     statut: 'En attente' | 'A validé' | 'Validé' | 'Reporté'
@@ -35,11 +42,9 @@ export function EffetsSpeciauxForm({ sequenceId, effet, onCancel, onSuccess }: E
     }
   }, [effet])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
+  const submitForm = async () => {
     if (!formData.nom.trim()) {
-      alert('Le nom est requis')
+      toast.error('Le nom est requis')
       return
     }
 
@@ -48,17 +53,32 @@ export function EffetsSpeciauxForm({ sequenceId, effet, onCancel, onSuccess }: E
     try {
       if (effet) {
         // Modification
-        sessionStore.updateEffetSpecial(sequenceId, effet.id, formData)
+        await updateEffetSpecial(effet.id, formData)
+        toast.success('Effet spécial modifié avec succès')
       } else {
         // Création
-        sessionStore.createEffetSpecial(sequenceId, formData)
+        await createEffetSpecial({
+          sequence_id: sequenceId,
+          ...formData
+        })
+        toast.success('Effet spécial créé avec succès')
       }
       onSuccess()
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error)
+      toast.error('Erreur lors de la sauvegarde de l\'effet spécial')
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  useImperativeHandle(ref, () => ({
+    submitForm
+  }), [formData, sequenceId, effet])
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    await submitForm()
   }
 
   const updateField = (field: keyof typeof formData, value: string) => {
@@ -138,4 +158,4 @@ export function EffetsSpeciauxForm({ sequenceId, effet, onCancel, onSuccess }: E
       </div>
     </form>
   )
-}
+})

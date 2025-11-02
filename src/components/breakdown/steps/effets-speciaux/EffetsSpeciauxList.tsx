@@ -1,9 +1,10 @@
 'use client'
 
 import { EffetSpecial } from '@/lib/types-clean'
-import { sessionStore } from '@/lib/sessionStore-mock'
+import { useEffetsSpeciaux } from '@/hooks/useEffetsSpeciaux'
 import Button from '@/components/ui/Button'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import toast from 'react-hot-toast'
 
 interface EffetsSpeciauxListProps {
   sequenceId: string
@@ -12,28 +13,26 @@ interface EffetsSpeciauxListProps {
 }
 
 export function EffetsSpeciauxList({ sequenceId, onCreateClick, onEditClick }: EffetsSpeciauxListProps) {
-  const [effets, setEffets] = useState<EffetSpecial[]>([])
+  const { effetsSpeciaux, deleteEffetSpecial, loading } = useEffetsSpeciaux(sequenceId)
+  const [deletingIds, setDeletingIds] = useState<string[]>([])
 
-  useEffect(() => {
-    // Charger les effets spéciaux de la séquence
-    const loadEffets = () => {
-      const effetsData = sessionStore.getEffetsSpeciaux(sequenceId)
-      setEffets(effetsData)
-    }
-
-    loadEffets()
-
-    // S'abonner aux changements
-    const unsubscribe = sessionStore.subscribe(() => {
-      loadEffets()
-    })
-
-    return unsubscribe
-  }, [sequenceId])
-
-  const handleDelete = (effeId: string) => {
+  const handleDelete = async (effetId: string) => {
     if (confirm('Êtes-vous sûr de vouloir supprimer cet effet spécial ?')) {
-      sessionStore.deleteEffetSpecial(sequenceId, effeId)
+      setDeletingIds(prev => [...prev, effetId])
+      
+      try {
+        const success = await deleteEffetSpecial(effetId)
+        if (success) {
+          toast.success('Effet spécial supprimé avec succès')
+        } else {
+          toast.error('Erreur lors de la suppression de l\'effet spécial')
+        }
+      } catch (error) {
+        console.error('Erreur lors de la suppression:', error)
+        toast.error('Erreur lors de la suppression de l\'effet spécial')
+      } finally {
+        setDeletingIds(prev => prev.filter(id => id !== effetId))
+      }
     }
   }
 
@@ -50,14 +49,14 @@ export function EffetsSpeciauxList({ sequenceId, onCreateClick, onEditClick }: E
         </Button>
       </div>
 
-      {effets.length === 0 ? (
+      {effetsSpeciaux.length === 0 ? (
         <div className="text-center py-12 text-gray-400">
           <div className="text-4xl mb-4">✨</div>
           <p className="mb-4">Pas d'effet spécial assigné à cette séquence</p>
         </div>
       ) : (
         <div className="space-y-2">
-          {effets.map((effet) => (
+          {effetsSpeciaux.map((effet: EffetSpecial) => (
             <div
               key={effet.id}
               className="p-4 rounded-lg border border-gray-600 bg-gray-800 hover:border-gray-500 transition-colors"
@@ -93,12 +92,17 @@ export function EffetsSpeciauxList({ sequenceId, onCreateClick, onEditClick }: E
                   </button>
                   <button
                     onClick={() => handleDelete(effet.id)}
-                    className="text-gray-400 hover:text-red-400 transition-colors"
+                    disabled={deletingIds.includes(effet.id)}
+                    className="text-gray-400 hover:text-red-400 transition-colors disabled:opacity-50"
                     title="Supprimer"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
+                    {deletingIds.includes(effet.id) ? (
+                      <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    )}
                   </button>
                 </div>
               </div>
