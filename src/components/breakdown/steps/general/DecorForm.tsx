@@ -1,16 +1,19 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, forwardRef, useImperativeHandle } from 'react'
 import { Decor } from '@/lib/types-clean'
 
 interface DecorFormProps {
   decor?: Decor | null
   onSave: (decorData: Omit<Decor, 'id' | 'createdAt'>) => void
   onCancel: () => void
-  submitTrigger?: number
 }
 
-export default function DecorForm({ decor, onSave, onCancel, submitTrigger }: DecorFormProps) {
+export interface DecorFormRef {
+  submitForm: () => void
+}
+
+const DecorForm = forwardRef<DecorFormRef, DecorFormProps>(({ decor, onSave, onCancel }, ref) => {
   const [formData, setFormData] = useState<Omit<Decor, 'id' | 'createdAt'>>({
     title: '',
     address: '',
@@ -41,19 +44,15 @@ export default function DecorForm({ decor, onSave, onCancel, submitTrigger }: De
     }
   }, [decor])
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
     onSave(formData)
   }
 
-  // Déclencher le submit quand submitTrigger change
-  const prevSubmitTrigger = useRef(submitTrigger)
-  useEffect(() => {
-    if (submitTrigger && submitTrigger !== prevSubmitTrigger.current) {
-      prevSubmitTrigger.current = submitTrigger
-      onSave(formData)
-    }
-  }, [submitTrigger, formData, onSave])
+  // Exposer la méthode submitForm via ref
+  useImperativeHandle(ref, () => ({
+    submitForm: () => handleSubmit()
+  }))
 
   const updateField = (field: keyof typeof formData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -132,4 +131,8 @@ export default function DecorForm({ decor, onSave, onCancel, submitTrigger }: De
       </div>
     </form>
   )
-}
+})
+
+DecorForm.displayName = 'DecorForm'
+
+export default DecorForm

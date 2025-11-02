@@ -26,12 +26,13 @@ interface GeneralStepProps {
   setFormData: (data: any) => void
   showSuccess: boolean
   sequenceId?: string  // Pour les composants Supabase
+  onTitleChange?: (title: string) => void  // Nouvelle prop pour gérer le changement de titre
 }
 
 const GENERAL_SUB_STEPS = ["Informations", "Décors", "Scènes"] as const
 type GeneralSubStep = typeof GENERAL_SUB_STEPS[number]
 
-export default function GeneralStep({ formData, setFormData, showSuccess, sequenceId }: GeneralStepProps) {
+export default function GeneralStep({ formData, setFormData, showSuccess, sequenceId, onTitleChange }: GeneralStepProps) {
   const [activeTab, setActiveTab] = useState<'informations' | 'decors' | 'scenes'>('informations')
   const { project } = useCurrentProject()
   const { createSequence, isLoading } = useSequences()
@@ -47,59 +48,10 @@ export default function GeneralStep({ formData, setFormData, showSuccess, sequen
     createdAt: new Date(d.created_at)
   }))
 
-  // Fonction pour créer une séquence de test
-  const handleCreateTestSequence = async () => {
-    if (!project?.id) {
-      toast.error('Aucun projet sélectionné')
-      return
-    }
-
-    const loadingToast = toast.loading('Création de la séquence...')
-
-    try {
-      const sequenceData = {
-        project_id: project.id,
-        title: `Séquence Test ${Date.now()}`,
-        color_id: '#3b82f6',
-        status: 'En attente' as const
-      }
-      
-      const newSequence = await createSequence(sequenceData)
-      
-      if (newSequence) {
-        toast.success(`Séquence "${newSequence.title}" créée avec succès !`, {
-          id: loadingToast,
-        })
-        // Vous pouvez maintenant tester les décors/scènes
-      }
-    } catch (error) {
-      console.error('Erreur lors de la création:', error)
-      toast.error('Erreur lors de la création de la séquence', {
-        id: loadingToast,
-      })
-    }
-  }
-
   const hasValidSequence = sequenceId && sequenceId !== ''
 
   return (
     <div className="space-y-6">
-      {/* Bouton de test pour créer une séquence */}
-      {!hasValidSequence && (
-        <div className="p-4 bg-gray-800 border border-gray-600 rounded-lg">
-          <p className="text-sm text-gray-300 mb-2">
-            Aucune séquence disponible. Créez une séquence de test pour tester les décors et scènes :
-          </p>
-          <Button 
-            onClick={handleCreateTestSequence}
-            disabled={isLoading}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            {isLoading ? 'Création...' : 'Créer une séquence de test'}
-          </Button>
-        </div>
-      )}
-
       {/* Navigation des onglets */}
       <div className="flex space-x-1 bg-gray-800 p-1 rounded-lg border border-gray-600">
         <button
@@ -154,6 +106,7 @@ export default function GeneralStep({ formData, setFormData, showSuccess, sequen
               formData={formData}
               setFormData={setFormData}
               showSuccess={showSuccess}
+              onTitleChange={onTitleChange}
             />
           </div>
         )}

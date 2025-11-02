@@ -44,10 +44,10 @@ export default function CreateSequenceForm({ onCancel, editMode = false, sequenc
   const [currentStep, setCurrentStep] = useState<StepKey>("Général")
   const [createdSequenceId, setCreatedSequenceId] = useState<string | null>(sequenceId || null)
   const [formData, setFormData] = useState({
-    code: 'SEQ-1',
-    title: 'Confrontation dans la rue',
+    code: '',
+    title: '',
     colorId: 'blue',
-    status: 'A validé',
+    status: 'En attente',
     location: '',
     summary: '',
     preMintage: '00:00',
@@ -56,6 +56,40 @@ export default function CreateSequenceForm({ onCancel, editMode = false, sequenc
     type: 'INT'
   })
   const [showSuccess, setShowSuccess] = useState(false)
+
+  // Fonction pour créer automatiquement une séquence quand on tape le titre
+  const handleTitleChange = async (newTitle: string) => {
+    const updatedFormData = { ...formData, title: newTitle }
+    setFormData(updatedFormData)
+
+    // Si on n'a pas encore de séquence créée et qu'on a un titre, créer automatiquement
+    if (!createdSequenceId && !editMode && newTitle.trim() && project?.id) {
+      const loadingToast = toast.loading('Création automatique de la séquence...')
+
+      try {
+        const sequenceData = {
+          project_id: project.id,
+          title: newTitle,
+          color_id: formData.colorId,
+          status: formData.status as any,
+        }
+        
+        const newSequence = await createSequence(sequenceData)
+        
+        if (newSequence) {
+          setCreatedSequenceId(newSequence.id)
+          toast.success(`Séquence "${newSequence.title}" créée ! Décors et scènes maintenant disponibles.`, {
+            id: loadingToast,
+          })
+        }
+      } catch (error) {
+        console.error('Erreur lors de la création automatique:', error)
+        toast.error('Erreur lors de la création automatique', {
+          id: loadingToast,
+        })
+      }
+    }
+  }
 
   // Charger les données en mode édition
   // Charger les données en mode édition depuis Supabase
@@ -259,10 +293,11 @@ export default function CreateSequenceForm({ onCancel, editMode = false, sequenc
             setFormData={setFormData}
             showSuccess={showSuccess}
             sequenceId={currentSequenceId}
+            onTitleChange={handleTitleChange}
           />
         )
       case "Rôle":
-        return <RoleStep />
+        return <RoleStep sequenceId={currentSequenceId} />
       case "Costume":
         return <CostumeStep />
       case "Accessoire":

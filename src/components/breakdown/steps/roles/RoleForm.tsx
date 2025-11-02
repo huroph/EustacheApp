@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, forwardRef, useImperativeHandle } from 'react'
 import { Role } from '@/lib/types-clean'
 import Button from '@/components/ui/Button'
 
@@ -8,10 +8,13 @@ interface RoleFormProps {
   role?: Role | null
   onSave: (roleData: Omit<Role, 'id' | 'createdAt'>) => void
   onCancel: () => void
-  submitTrigger?: number
 }
 
-export default function RoleForm({ role, onSave, onCancel, submitTrigger }: RoleFormProps) {
+export interface RoleFormRef {
+  submitForm: () => void
+}
+
+const RoleForm = forwardRef<RoleFormRef, RoleFormProps>(({ role, onSave, onCancel }, ref) => {
   const [formData, setFormData] = useState<Omit<Role, 'id' | 'createdAt'>>({
     type: 'Principale',
     nomRole: '',
@@ -84,19 +87,15 @@ export default function RoleForm({ role, onSave, onCancel, submitTrigger }: Role
     }
   }, [role])
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
     onSave(formData)
   }
 
-  // Déclencher le submit quand submitTrigger change
-  const prevSubmitTrigger = useRef(submitTrigger)
-  useEffect(() => {
-    if (submitTrigger && submitTrigger !== prevSubmitTrigger.current) {
-      prevSubmitTrigger.current = submitTrigger
-      onSave(formData)
-    }
-  }, [submitTrigger, formData, onSave])
+  // Exposer la méthode submitForm via ref
+  useImperativeHandle(ref, () => ({
+    submitForm: () => handleSubmit()
+  }))
 
   const updateField = (field: keyof typeof formData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -350,4 +349,8 @@ export default function RoleForm({ role, onSave, onCancel, submitTrigger }: Role
       </div>
     </form>
   )
-}
+})
+
+RoleForm.displayName = 'RoleForm'
+
+export default RoleForm

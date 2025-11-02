@@ -15,9 +15,10 @@ interface InformationsFormProps {
   }
   setFormData: (data: any) => void
   showSuccess: boolean
+  onTitleChange?: (title: string) => void  // Nouvelle prop
 }
 
-export default function InformationsForm({ formData, setFormData, showSuccess }: InformationsFormProps) {
+export default function InformationsForm({ formData, setFormData, showSuccess, onTitleChange }: InformationsFormProps) {
   const availableColors = [
     { id: 'blue', color: 'bg-blue-500', name: 'Bleu' },
     { id: 'green', color: 'bg-green-500', name: 'Vert' },
@@ -54,7 +55,13 @@ export default function InformationsForm({ formData, setFormData, showSuccess }:
               id="title"
               type="text"
               value={formData.title}
-              onChange={(e) => setFormData((prev: any) => ({ ...prev, title: e.target.value }))}
+              onChange={(e) => {
+                const newTitle = e.target.value
+                setFormData((prev: any) => ({ ...prev, title: newTitle }))
+                if (onTitleChange) {
+                  onTitleChange(newTitle)
+                }
+              }}
               className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />

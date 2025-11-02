@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import toast from 'react-hot-toast'
 import { Decor } from '@/lib/types-clean'
 import { useDecors } from '@/hooks/useDecors'
 import { useStepForm } from '@/hooks/useStepForm'
 import DecorsList from './DecorsList'
-import DecorForm from './DecorForm'
+import DecorForm, { DecorFormRef } from './DecorForm'
 
 interface DecorStepSupabaseProps {
   sequenceId: string
@@ -33,9 +33,10 @@ const adaptDecorToSupabase = (decor: Omit<Decor, 'id' | 'createdAt'>) => ({
 
 export default function DecorStepSupabase({ sequenceId, onUpdate }: DecorStepSupabaseProps) {
   const { decors: supabaseDecors, createDecor, updateDecor, deleteDecor, isLoading } = useDecors(sequenceId)
+  const { enterFormMode, exitFormMode } = useStepForm()
   const [viewMode, setViewMode] = useState<'list' | 'form'>('list')
   const [editingDecor, setEditingDecor] = useState<Decor | null>(null)
-  const { enterFormMode, exitFormMode } = useStepForm()
+  const formRef = useRef<DecorFormRef | null>(null)
 
   // Convertir les décors Supabase vers le format de l'interface
   const decors: Decor[] = supabaseDecors.map(adaptSupabaseToDecor)
@@ -53,7 +54,9 @@ export default function DecorStepSupabase({ sequenceId, onUpdate }: DecorStepSup
     enterFormMode(
       () => {
         // Cette fonction sera appelée quand on clique sur "Créer" dans le footer
-        console.log('Submit decor form')
+        if (formRef.current) {
+          formRef.current.submitForm()
+        }
       },
       () => {
         // Fonction d'annulation
@@ -70,7 +73,10 @@ export default function DecorStepSupabase({ sequenceId, onUpdate }: DecorStepSup
     
     enterFormMode(
       () => {
-        console.log('Update decor form')
+        // Cette fonction sera appelée quand on clique sur "Modifier" dans le footer
+        if (formRef.current) {
+          formRef.current.submitForm()
+        }
       },
       () => {
         setViewMode('list')
@@ -141,6 +147,7 @@ export default function DecorStepSupabase({ sequenceId, onUpdate }: DecorStepSup
   if (viewMode === 'form') {
     return (
       <DecorForm
+        ref={formRef}
         decor={editingDecor}
         onSave={handleSaveDecor}
         onCancel={() => {

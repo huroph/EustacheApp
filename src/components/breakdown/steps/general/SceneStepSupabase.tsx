@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import toast from 'react-hot-toast'
 import { Scene, Decor } from '@/lib/types-clean'
 import { useScenes } from '@/hooks/useScenes'
 import { useStepForm } from '@/hooks/useStepForm'
 import ScenesList from './ScenesList'
-import SceneForm from './SceneForm'
+import SceneForm, { SceneFormRef } from './SceneForm'
 
 interface SceneStepSupabaseProps {
   sequenceId: string
@@ -37,6 +37,7 @@ export default function SceneStepSupabase({ sequenceId, decors, onUpdate }: Scen
   const [viewMode, setViewMode] = useState<'list' | 'form'>('list')
   const [editingScene, setEditingScene] = useState<Scene | null>(null)
   const { enterFormMode, exitFormMode } = useStepForm()
+  const formRef = useRef<SceneFormRef | null>(null)
 
   // Convertir les scènes Supabase vers le format de l'interface
   const scenes: Scene[] = supabaseScenes.map(adaptSupabaseToScene)
@@ -55,7 +56,10 @@ export default function SceneStepSupabase({ sequenceId, decors, onUpdate }: Scen
     
     enterFormMode(
       () => {
-        console.log('Submit scene form')
+        // Cette fonction sera appelée quand on clique sur "Créer" dans le footer
+        if (formRef.current) {
+          formRef.current.submitForm()
+        }
       },
       () => {
         setViewMode('list')
@@ -71,7 +75,10 @@ export default function SceneStepSupabase({ sequenceId, decors, onUpdate }: Scen
     
     enterFormMode(
       () => {
-        console.log('Update scene form')
+        // Cette fonction sera appelée quand on clique sur "Modifier" dans le footer
+        if (formRef.current) {
+          formRef.current.submitForm()
+        }
       },
       () => {
         setViewMode('list')
@@ -142,6 +149,7 @@ export default function SceneStepSupabase({ sequenceId, decors, onUpdate }: Scen
   if (viewMode === 'form') {
     return (
       <SceneForm
+        ref={formRef}
         scene={editingScene}
         decors={decors}
         onSave={handleSaveScene}

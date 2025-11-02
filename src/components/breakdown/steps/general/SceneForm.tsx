@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, forwardRef, useImperativeHandle } from 'react'
 import { Scene, Decor } from '@/lib/types-clean'
 
 interface SceneFormProps {
@@ -8,10 +8,13 @@ interface SceneFormProps {
   decors: Decor[]
   onSave: (sceneData: Omit<Scene, 'id' | 'createdAt'>) => void
   onCancel: () => void
-  submitTrigger?: number
 }
 
-export default function SceneForm({ scene, decors, onSave, onCancel, submitTrigger }: SceneFormProps) {
+export interface SceneFormRef {
+  submitForm: () => void
+}
+
+const SceneForm = forwardRef<SceneFormRef, SceneFormProps>(({ scene, decors, onSave, onCancel }, ref) => {
   const [formData, setFormData] = useState<Omit<Scene, 'id' | 'createdAt'>>({
     numero: '',
     decorId: '',
@@ -41,19 +44,15 @@ export default function SceneForm({ scene, decors, onSave, onCancel, submitTrigg
     }
   }, [scene])
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
     onSave(formData)
   }
 
-  // Déclencher le submit quand submitTrigger change
-  const prevSubmitTrigger = useRef(submitTrigger)
-  useEffect(() => {
-    if (submitTrigger && submitTrigger !== prevSubmitTrigger.current) {
-      prevSubmitTrigger.current = submitTrigger
-      onSave(formData)
-    }
-  }, [submitTrigger, formData, onSave])
+  // Exposer la méthode submitForm via ref
+  useImperativeHandle(ref, () => ({
+    submitForm: () => handleSubmit()
+  }))
 
   const updateField = (field: keyof typeof formData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -133,4 +132,8 @@ export default function SceneForm({ scene, decors, onSave, onCancel, submitTrigg
       </div>
     </form>
   )
-}
+})
+
+SceneForm.displayName = 'SceneForm'
+
+export default SceneForm
