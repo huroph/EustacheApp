@@ -10,6 +10,7 @@ import { SequencesService } from '@/lib/services/sequences'
 import SequenceCard from '@/components/sequences/SequenceCard'
 import EquipeRolesSection from '@/components/sequences/EquipeRolesSection'
 import BreakdownTechniqueSection from '@/components/sequences/BreakdownTechniqueSection'
+import CollapsibleSection from '@/components/ui/CollapsibleSection'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 
@@ -194,76 +195,55 @@ export default function SequencesPage() {
                 </div>
 
                 {/* Main Content with 3 Sections */}
-                <div className="space-y-8">
+                <div className="space-y-4">
                   {/* Section 1: Général */}
-                  <section className="bg-gray-700 rounded-lg p-6">
-                    <h3 className="text-xl font-bold text-white mb-4 flex items-center">
-                      <span className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-sm mr-3">1</span>
-                      Général
-                    </h3>
-                    
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                      {/* Informations générales */}
-                      <div className="space-y-4">
-                        <h4 className="text-white font-medium text-lg mb-3">Informations</h4>
-                        
-                        <div>
-                          <h5 className="text-gray-400 text-sm mb-1">Localisation :</h5>
-                          <div className="flex items-center space-x-2">
-                            <span className="text-white">{selectedSequence.location || 'Non défini'}</span>
-                            <Badge>{selectedSequence.location_type || 'INT'}</Badge>
-                            <Badge>{selectedSequence.time_of_day || 'JOUR'}</Badge>
-                          </div>
+                  <CollapsibleSection title="Général" defaultOpen={true}>
+                    <div className="space-y-4">
+                      {/* Décor */}
+                      <div>
+                        <h5 className="text-gray-400 text-sm mb-2">Décor :</h5>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-white">{selectedSequence.location || 'Manoir Dubois - Salon principal'}</span>
+                          <span className="px-2 py-1 rounded text-xs bg-purple-600 text-white">
+                            {selectedSequence.location_type || 'INT'}
+                          </span>
+                          <span className="px-2 py-1 rounded text-xs bg-purple-600 text-white">
+                            {selectedSequence.time_of_day || 'JOUR'}
+                          </span>
                         </div>
+                      </div>
 
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <h5 className="text-gray-400 text-sm mb-1">E.T.T. (hh:mm) :</h5>
-                            <p className="text-blue-400 font-semibold">{selectedSequence.ett || 'Non défini'}</p>
-                          </div>
-                          <div>
-                            <h5 className="text-gray-400 text-sm mb-1">Pré-minutage :</h5>
-                            <p className="text-blue-400 font-semibold">{selectedSequence.pre_montage || 'Non défini'}</p>
-                          </div>
-                        </div>
+                      {/* Lieux de tournages */}
+                      <div>
+                        <h5 className="text-gray-400 text-sm mb-2">Lieux de tournages :</h5>
+                        <p className="text-white text-sm">12 Impasse Bompard, 13100 MARSEILLE</p>
+                      </div>
 
+                      {/* E.T.T. et Pré-minutage */}
+                      <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <h5 className="text-gray-400 text-sm mb-2">Résumé :</h5>
-                          <p className="text-gray-300 text-sm leading-relaxed bg-gray-800 p-3 rounded">
-                            {selectedSequence.summary || 'Aucun résumé disponible'}
+                          <h5 className="text-gray-400 text-sm mb-1">E.T.T. (hh:mm) :</h5>
+                          <p className="text-blue-400 font-semibold text-lg">
+                            {selectedSequence.ett || '1h20'}
+                          </p>
+                        </div>
+                        <div>
+                          <h5 className="text-gray-400 text-sm mb-1">Pré-minutage (mm:ss) :</h5>
+                          <p className="text-blue-400 font-semibold text-lg">
+                            {selectedSequence.pre_montage || '1:20 min'}
                           </p>
                         </div>
                       </div>
 
-                      {/* Scènes */}
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <h4 className="text-white font-medium text-lg">Scènes</h4>
-                          <Button size="sm">+ Ajouter</Button>
-                        </div>
-                        <div className="bg-gray-800 rounded-lg p-4 text-center">
-                          <div className="text-gray-400 text-sm">
-                            <p>🎬 Aucune scène</p>
-                            <p className="mt-2">Ajouter des scènes à cette séquence</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Décors */}
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <h4 className="text-white font-medium text-lg">Décors</h4>
-                          <Button size="sm">+ Ajouter</Button>
-                        </div>
-                        <div className="bg-gray-800 rounded-lg p-4 text-center">
-                          <div className="text-gray-400 text-sm">
-                            <p>🏠 Aucun décor</p>
-                            <p className="mt-2">Ajouter des décors à cette séquence</p>
-                          </div>
-                        </div>
+                      {/* Résumé */}
+                      <div>
+                        <h5 className="text-gray-400 text-sm mb-2">Résumé :</h5>
+                        <p className="text-gray-300 text-sm leading-relaxed">
+                          {selectedSequence.summary || 'Une rue commerçante. Passants, vélos, poussettes. Un MIMÉE (mime) statue vivante. Un CHIEN renifle une borne de parking. Des pannea...'}
+                        </p>
                       </div>
                     </div>
-                  </section>
+                  </CollapsibleSection>
 
                   {/* Section 2: Équipe et Rôles */}
                   <EquipeRolesSection selectedSequence={selectedSequence} />
