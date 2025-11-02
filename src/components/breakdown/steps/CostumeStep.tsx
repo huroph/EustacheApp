@@ -1,41 +1,52 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, forwardRef, useImperativeHandle, useRef } from 'react'
 import { Costume, Role } from '@/lib/types-clean'
-import { sessionStore } from '@/lib/sessionStore-mock'
+import { useCostumes } from '@/hooks/useCostumes'
+import { useRoles } from '@/hooks/useRoles'
+import { CostumesService } from '@/services/CostumesService'
+import { adaptSupabaseToRole } from '@/services/RolesService'
 import { useStepForm } from '@/hooks/useStepForm'
 import CostumesList from './costumes/CostumesList'
-import CostumeForm from './costumes/CostumeForm'
+import CostumeForm, { CostumeFormRef } from './costumes/CostumeForm'
+import toast from 'react-hot-toast'
 
-export default function CostumeStep() {
-  const [costumes, setCostumes] = useState<Costume[]>([])
-  const [roles, setRoles] = useState<Role[]>([])
+interface CostumeStepProps {
+  sequenceId: string
+}
+
+export interface CostumeStepRef {
+  handleSubmit: () => Promise<boolean>
+}
+
+export default forwardRef<CostumeStepRef, CostumeStepProps>(function CostumeStep({ sequenceId }, ref) {
+  const { costumes, isLoading, createCostume, updateCostume, deleteCostume } = useCostumes(sequenceId)
+  const { roles, isLoading: rolesLoading } = useRoles(sequenceId)
   const [viewMode, setViewMode] = useState<'list' | 'form'>('list')
   const [editingCostume, setEditingCostume] = useState<Costume | null>(null)
   const [roleNames, setRoleNames] = useState<{ [roleId: string]: string }>({})
   const { enterFormMode, exitFormMode } = useStepForm()
+  const formRef = useRef<CostumeFormRef | null>(null)
 
-  const loadData = () => {
-    const currentSequence = sessionStore.getCurrentSequence()
-    if (currentSequence) {
-      const sequenceCostumes = sessionStore.getCostumes(currentSequence.id)
-      const sequenceRoles = sessionStore.getRoles(currentSequence.id)
-      
-      setCostumes(sequenceCostumes)
-      setRoles(sequenceRoles)
-      
-      // Créer un map roleId -> nom pour l'affichage
+  // Exposer les méthodes via ref pour le footer
+  useImperativeHandle(ref, () => ({
+    handleSubmit: async () => {
+      // Pour les costumes, pas besoin de validation spécifique
+      return true
+    }
+  }))
+
+  // Charger les noms des rôles quand les rôles changent
+  useEffect(() => {
+    if (roles.length > 0) {
       const names: { [roleId: string]: string } = {}
-      sequenceRoles.forEach(role => {
-        names[role.id] = role.nomRole
+      roles.forEach(role => {
+        const adaptedRole = adaptSupabaseToRole(role)
+        names[adaptedRole.id] = adaptedRole.nomRole
       })
       setRoleNames(names)
     }
-  }
-
-  useEffect(() => {
-    loadData()
-  }, [])
+  }, [roles])
 
   const handleCreateCostume = () => {
     setEditingCostume(null)
@@ -45,7 +56,9 @@ export default function CostumeStep() {
     enterFormMode(
       () => {
         // Cette fonction sera appelée quand on clique sur "Créer" dans le footer
-        console.log('Submit costume form')
+        if (formRef.current) {
+          formRef.current.submitForm()
+        }
       },
       () => {
         // Fonction d'annulation - le contexte gère automatiquement la sortie du mode formulaire
@@ -64,7 +77,9 @@ export default function CostumeStep() {
     enterFormMode(
       () => {
         // Cette fonction sera appelée quand on clique sur "Modifier" dans le footer
-        console.log('Submit costume form')
+        if (formRef.current) {
+          formRef.current.submitForm()
+        }
       },
       () => {
         // Fonction d'annulation - le contexte gère automatiquement la sortie du mode formulaire
@@ -75,38 +90,89 @@ export default function CostumeStep() {
     )
   }
 
-  const handleDeleteCostume = (costumeId: string) => {
-    const currentSequence = sessionStore.getCurrentSequence()
-    if (!currentSequence) return
-
-    sessionStore.deleteCostume(currentSequence.id, costumeId)
-    loadData()
+  const handleDeleteCostume = async (costumeId: string) => {
+    try {
+      const success = await deleteCostume(costumeId)
+      
+      if (success) {
+        toast.success('Costume supprimé avec succès', {
+          style: { background: '#374151', color: '#fff' }
+        })
+      }
+    } catch (error) {
+      console.error('Erreur lors de la suppression du costume:', error)
+      toast.error('Erreur lors de la suppression du costume', {
+        style: { background: '#374151', color: '#fff' }
+      })
+    }
   }
 
-  const handleSaveCostume = (costumeData: Omit<Costume, 'id' | 'createdAt'>) => {
-    const currentSequence = sessionStore.getCurrentSequence()
-    if (!currentSequence) return
+  const handleSaveCostume = async (costumeData: Omit<Costume, 'id' | 'createdAt'>) => {
+    try {
+      if (editingCostume) {
+        // Mise à jour
+        const result = await updateCostume(editingCostume.id, {
+          nom_costume: costumeData.nomCostume,
+          role_id: costumeData.roleId || undefined,
+          statut: costumeData.statut,
+          notes_costume: costumeData.notesCostume || undefined
+        })
 
-    if (editingCostume) {
-      // Mise à jour
-      sessionStore.updateCostume(currentSequence.id, editingCostume.id, costumeData)
-    } else {
-      // Création
-      sessionStore.createCostume(currentSequence.id, costumeData)
+        if (result) {
+          toast.success('Costume modifié avec succès', {
+            style: { background: '#374151', color: '#fff' }
+          })
+        }
+      } else {
+        // Création
+        const result = await createCostume({
+          sequence_id: sequenceId,
+          nom_costume: costumeData.nomCostume,
+          role_id: costumeData.roleId || undefined,
+          statut: costumeData.statut,
+          notes_costume: costumeData.notesCostume || undefined
+        })
+
+        if (result) {
+          toast.success('Costume créé avec succès', {
+            style: { background: '#374151', color: '#fff' }
+          })
+        }
+      }
+
+      setViewMode('list')
+      setEditingCostume(null)
+      
+      // Sortir du mode formulaire
+      exitFormMode()
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde du costume:', error)
+      toast.error('Erreur lors de la sauvegarde du costume', {
+        style: { background: '#374151', color: '#fff' }
+      })
     }
-
-    loadData()
-    setViewMode('list')
-    setEditingCostume(null)
-    
-    // Sortir du mode formulaire
-    exitFormMode()
   }
 
   const handleBackToList = () => {
     setViewMode('list')
     setEditingCostume(null)
     // Le contexte gère automatiquement la sortie du mode formulaire via triggerCancel
+  }
+
+  // Adapter les costumes Supabase vers l'interface frontend
+  const adaptedCostumes: Costume[] = costumes.map(costume => 
+    CostumesService.adaptSupabaseToCostume(costume)
+  )
+
+  // Adapter les rôles Supabase vers l'interface frontend
+  const adaptedRoles: Role[] = roles.map(role => adaptSupabaseToRole(role))
+
+  if (isLoading || rolesLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    )
   }
 
   return (
@@ -118,7 +184,7 @@ export default function CostumeStep() {
 
       {viewMode === 'list' ? (
         <CostumesList
-          costumes={costumes}
+          costumes={adaptedCostumes}
           onCreateCostume={handleCreateCostume}
           onEditCostume={handleEditCostume}
           onDeleteCostume={handleDeleteCostume}
@@ -126,12 +192,13 @@ export default function CostumeStep() {
         />
       ) : (
         <CostumeForm
+          ref={formRef}
           costume={editingCostume}
-          roles={roles}
+          roles={adaptedRoles}
           onSave={handleSaveCostume}
           onCancel={handleBackToList}
         />
       )}
     </div>
   )
-}
+})

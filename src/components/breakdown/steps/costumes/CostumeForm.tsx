@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react'
 import { Costume, Role } from '@/lib/types-clean'
 import Button from '@/components/ui/Button'
 
@@ -12,7 +12,11 @@ interface CostumeFormProps {
   submitTrigger?: number
 }
 
-export default function CostumeForm({ costume, roles, onSave, onCancel, submitTrigger }: CostumeFormProps) {
+export interface CostumeFormRef {
+  submitForm: () => void
+}
+
+const CostumeForm = forwardRef<CostumeFormRef, CostumeFormProps>(({ costume, roles, onSave, onCancel, submitTrigger }, ref) => {
   const [formData, setFormData] = useState<Omit<Costume, 'id' | 'createdAt'>>({
     nomCostume: '',
     roleId: '',
@@ -40,13 +44,18 @@ export default function CostumeForm({ costume, roles, onSave, onCancel, submitTr
     }
   }, [costume])
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
     onSave({
       ...formData,
       roleId: formData.roleId || undefined // Convertir string vide en undefined
     })
   }
+
+  // Exposer la méthode submitForm via ref
+  useImperativeHandle(ref, () => ({
+    submitForm: () => handleSubmit()
+  }))
 
   // Déclencher le submit quand submitTrigger change
   const prevSubmitTrigger = useRef(submitTrigger)
@@ -151,4 +160,8 @@ export default function CostumeForm({ costume, roles, onSave, onCancel, submitTr
       </div>
     </form>
   )
-}
+})
+
+CostumeForm.displayName = 'CostumeForm'
+
+export default CostumeForm

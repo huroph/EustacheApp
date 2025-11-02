@@ -299,7 +299,7 @@ export default function CreateSequenceForm({ onCancel, editMode = false, sequenc
       case "Rôle":
         return <RoleStep sequenceId={currentSequenceId} />
       case "Costume":
-        return <CostumeStep />
+        return <CostumeStep sequenceId={currentSequenceId || ''} />
       case "Accessoire":
         return <AccessoireStep />
       case "Effets spéciaux":
