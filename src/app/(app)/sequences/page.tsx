@@ -8,6 +8,8 @@ import { useCurrentProject } from '@/lib/currentProject-supabase'
 import { useSequences } from '@/hooks/useSequences'
 import { SequencesService } from '@/lib/services/sequences'
 import SequenceCard from '@/components/sequences/SequenceCard'
+import EquipeRolesSection from '@/components/sequences/EquipeRolesSection'
+import BreakdownTechniqueSection from '@/components/sequences/BreakdownTechniqueSection'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 
@@ -163,7 +165,7 @@ export default function SequencesPage() {
           </div>
 
           {/* Sequence details panel (right side) */}
-          <div className="lg:col-span-2 bg-gray-800 rounded-lg p-6">
+          <div className="lg:col-span-2 bg-gray-800 rounded-lg p-6 overflow-y-auto">
             {selectedSequence ? (
               <div className="space-y-6">
                 {/* Header with sequence info */}
@@ -191,80 +193,83 @@ export default function SequencesPage() {
                   </Button>
                 </div>
 
-                {/* Tabs */}
-                <div className="border-b border-gray-600">
-                  <div className="flex space-x-8">
-                    <button className="text-white border-b-2 border-white pb-2 text-sm font-medium">
-                      Générale
-                    </button>
-                    <button className="text-gray-400 pb-2 text-sm">
-                      Scènes associées
-                    </button>
-                  </div>
-                </div>
+                {/* Main Content with 3 Sections */}
+                <div className="space-y-8">
+                  {/* Section 1: Général */}
+                  <section className="bg-gray-700 rounded-lg p-6">
+                    <h3 className="text-xl font-bold text-white mb-4 flex items-center">
+                      <span className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-sm mr-3">1</span>
+                      Général
+                    </h3>
+                    
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                      {/* Informations générales */}
+                      <div className="space-y-4">
+                        <h4 className="text-white font-medium text-lg mb-3">Informations</h4>
+                        
+                        <div>
+                          <h5 className="text-gray-400 text-sm mb-1">Localisation :</h5>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-white">{selectedSequence.location || 'Non défini'}</span>
+                            <Badge>{selectedSequence.location_type || 'INT'}</Badge>
+                            <Badge>{selectedSequence.time_of_day || 'JOUR'}</Badge>
+                          </div>
+                        </div>
 
-                {/* Content sections */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Left column */}
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="text-white font-medium mb-2">Localisation :</h4>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-gray-300">{selectedSequence.location || 'Non défini'}</span>
-                        <Badge>{selectedSequence.type}</Badge>
-                        <Badge>{selectedSequence.effet}</Badge>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <h5 className="text-gray-400 text-sm mb-1">E.T.T. (hh:mm) :</h5>
+                            <p className="text-blue-400 font-semibold">{selectedSequence.ett || 'Non défini'}</p>
+                          </div>
+                          <div>
+                            <h5 className="text-gray-400 text-sm mb-1">Pré-minutage :</h5>
+                            <p className="text-blue-400 font-semibold">{selectedSequence.pre_montage || 'Non défini'}</p>
+                          </div>
+                        </div>
+
+                        <div>
+                          <h5 className="text-gray-400 text-sm mb-2">Résumé :</h5>
+                          <p className="text-gray-300 text-sm leading-relaxed bg-gray-800 p-3 rounded">
+                            {selectedSequence.summary || 'Aucun résumé disponible'}
+                          </p>
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <h4 className="text-white font-medium mb-2">E.T.T. (hh:mm) :</h4>
-                      <p className="text-blue-400 font-semibold">{selectedSequence.ett || 'Non défini'}</p>
-                    </div>
-                    <div>
-                      <h4 className="text-white font-medium mb-2">Pré-minutage (mm:ss) :</h4>
-                      <p className="text-blue-400 font-semibold">{selectedSequence.pre_montage || 'Non défini'}</p>
-                    </div>
-                    </div>
+                      {/* Scènes */}
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-white font-medium text-lg">Scènes</h4>
+                          <Button size="sm">+ Ajouter</Button>
+                        </div>
+                        <div className="bg-gray-800 rounded-lg p-4 text-center">
+                          <div className="text-gray-400 text-sm">
+                            <p>🎬 Aucune scène</p>
+                            <p className="mt-2">Ajouter des scènes à cette séquence</p>
+                          </div>
+                        </div>
+                      </div>
 
-                    <div>
-                      <h4 className="text-white font-medium mb-2">Résumé :</h4>
-                      <p className="text-gray-300 text-sm leading-relaxed">
-                        {selectedSequence.summary || 'Aucun résumé disponible'}
-                      </p>
-                    </div>
-
-                    <div>
-                      <h4 className="text-white font-medium mb-2">Décors :</h4>
-                      <div className="space-y-2">
-                        <div className="text-center text-gray-400 py-4">
-                          <p className="text-sm">Fonctionnalité à venir</p>
-                          <p className="text-xs mt-1">Migration des décors en cours...</p>
+                      {/* Décors */}
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-white font-medium text-lg">Décors</h4>
+                          <Button size="sm">+ Ajouter</Button>
+                        </div>
+                        <div className="bg-gray-800 rounded-lg p-4 text-center">
+                          <div className="text-gray-400 text-sm">
+                            <p>🏠 Aucun décor</p>
+                            <p className="mt-2">Ajouter des décors à cette séquence</p>
+                          </div>
                         </div>
                       </div>
                     </div>
+                  </section>
 
-                    <div>
-                      <h4 className="text-white font-medium mb-2">Scènes :</h4>
-                      <div className="space-y-2">
-                        <div className="text-center text-gray-400 py-4">
-                          <p className="text-sm">Fonctionnalité à venir</p>
-                          <p className="text-xs mt-1">Migration des scènes en cours...</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  {/* Section 2: Équipe et Rôles */}
+                  <EquipeRolesSection selectedSequence={selectedSequence} />
 
-                  {/* Right column - Placeholder for future features */}
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="text-white font-medium mb-3">Équipe et Rôles</h4>
-                      <div className="text-center text-gray-400 py-8">
-                        <p>Fonctionnalité à venir</p>
-                        <p className="text-sm mt-2">Gestion d'équipe, acteurs, costumes...</p>
-                      </div>
-                    </div>
-                  </div>
+                  {/* Section 3: Breakdown Technique */}
+                  <BreakdownTechniqueSection selectedSequence={selectedSequence} />
                 </div>
               </div>
             ) : (
