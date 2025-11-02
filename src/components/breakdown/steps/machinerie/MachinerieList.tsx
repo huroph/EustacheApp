@@ -1,9 +1,11 @@
 'use client'
 
 import { Machinerie } from '@/lib/types-clean'
-import { sessionStore } from '@/lib/sessionStore-mock'
 import Button from '@/components/ui/Button'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useMachinerie } from '@/hooks/useMachinerie'
+import { useEquipesTechniques } from '@/hooks/useEquipesTechniques'
+import toast from 'react-hot-toast'
 
 interface MachinerieListProps {
   sequenceId: string
@@ -12,29 +14,30 @@ interface MachinerieListProps {
 }
 
 export function MachinerieList({ sequenceId, onCreateClick, onEditClick }: MachinerieListProps) {
-  const [machineries, setMachineries] = useState<Machinerie[]>([])
   const [searchTerm, setSearchTerm] = useState('')
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  
+  const { machinerie, deleteMachinerie, refreshMachinerie } = useMachinerie(sequenceId)
+  const { equipesTechniques } = useEquipesTechniques(sequenceId)
 
-  useEffect(() => {
-    // Charger les machineries de la séquence
-    const loadMachineries = () => {
-      const machineriesData = sessionStore.getMachineries(sequenceId)
-      setMachineries(machineriesData)
-    }
-
-    loadMachineries()
-
-    // S'abonner aux changements
-    const unsubscribe = sessionStore.subscribe(() => {
-      loadMachineries()
-    })
-
-    return unsubscribe
-  }, [sequenceId])
-
-  const handleDelete = (machinerieId: string) => {
+  const handleDelete = async (machinerieId: string) => {
     if (confirm('Êtes-vous sûr de vouloir supprimer cette machinerie ?')) {
-      sessionStore.deleteMachinerie(sequenceId, machinerieId)
+      setDeletingId(machinerieId)
+      
+      const success = await deleteMachinerie(machinerieId)
+      
+      if (success) {
+        toast.success('Machinerie supprimée avec succès', {
+          style: { background: '#374151', color: '#ffffff' }
+        })
+        refreshMachinerie()
+      } else {
+        toast.error('Erreur lors de la suppression', {
+          style: { background: '#374151', color: '#ffffff' }
+        })
+      }
+      
+      setDeletingId(null)
     }
   }
 
@@ -54,13 +57,13 @@ export function MachinerieList({ sequenceId, onCreateClick, onEditClick }: Machi
   }
 
   const getReferentName = (referentId: string) => {
-    const equipe = sessionStore.getEquipeTechnique(referentId)
+    const equipe = equipesTechniques.find(e => e.id === referentId)
     return equipe ? `${equipe.prenom} ${equipe.nom}` : 'Référent inconnu'
   }
 
-  const filteredMachineries = machineries.filter(machinerie => 
-    machinerie.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    getReferentName(machinerie.referentId).toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredMachineries = machinerie.filter(item => 
+    item.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    getReferentName(item.referentId).toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   return (
@@ -77,20 +80,18 @@ export function MachinerieList({ sequenceId, onCreateClick, onEditClick }: Machi
       </div>
 
       {/* Search bar */}
-      <div className="relative">
-        <input
-          type="text"
-          placeholder="Search Accessoire..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 pl-10 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
-        />
-        <svg className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m21 21-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
-      </div>
-
-      {filteredMachineries.length === 0 ? (
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Rechercher machinerie..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 pl-10 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+          />
+          <svg className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m21 21-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>      {filteredMachineries.length === 0 ? (
         <div className="text-center py-12 text-gray-400">
           <div className="text-4xl mb-4">🎬</div>
           <p className="mb-4">Pas de machinerie assignée à cette séquences.</p>
@@ -105,7 +106,7 @@ export function MachinerieList({ sequenceId, onCreateClick, onEditClick }: Machi
               <div className="flex items-center justify-between">
                 <div className="flex-1">
                   <div className="flex items-center space-x-2 mb-1">
-                    <span className="text-white font-medium">Costume: {machinerie.nom}</span>
+                    <span className="text-white font-medium">Machinerie: {machinerie.nom}</span>
                     <span className={`px-2 py-1 rounded text-xs ${getStatusColor(machinerie.statut)}`}>
                       {machinerie.statut}
                     </span>
@@ -141,11 +142,16 @@ export function MachinerieList({ sequenceId, onCreateClick, onEditClick }: Machi
                     variant="ghost"
                     size="sm"
                     onClick={() => handleDelete(machinerie.id)}
-                    className="text-gray-400 hover:text-red-400"
+                    disabled={deletingId === machinerie.id}
+                    className="text-gray-400 hover:text-red-400 disabled:opacity-50"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
+                    {deletingId === machinerie.id ? (
+                      <div className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    )}
                   </Button>
                 </div>
               </div>

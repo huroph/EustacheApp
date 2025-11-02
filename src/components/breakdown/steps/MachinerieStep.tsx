@@ -1,10 +1,9 @@
 'use client'
 
 import { Machinerie } from '@/lib/types-clean'
-import { sessionStore } from '@/lib/sessionStore-mock'
 import { MachinerieList } from './machinerie/MachinerieList'
-import { MachinerieForm } from './machinerie/MachinerieForm'
-import { useState, useEffect } from 'react'
+import { MachinerieForm, MachinerieFormRef } from './machinerie/MachinerieForm'
+import { useState, useEffect, useRef } from 'react'
 import { useStepForm } from '@/hooks/useStepForm'
 
 interface MachinerieStepProps {
@@ -16,13 +15,11 @@ export default function MachinerieStep({ sequenceId }: MachinerieStepProps) {
   const [viewMode, setViewMode] = useState<'list' | 'form'>('list')
   const [editingMachinerie, setEditingMachinerie] = useState<Machinerie | undefined>(undefined)
   const [currentSequenceId, setCurrentSequenceId] = useState<string>('')
+  const formRef = useRef<MachinerieFormRef>(null)
 
   useEffect(() => {
-    // Récupérer l'ID de la séquence courante
-    const currentSeq = sessionStore.getCurrentSequence()
-    if (currentSeq) {
-      setCurrentSequenceId(currentSeq.id)
-    } else if (sequenceId) {
+    // Utiliser directement le sequenceId fourni
+    if (sequenceId) {
       setCurrentSequenceId(sequenceId)
     }
   }, [sequenceId])
@@ -39,9 +36,9 @@ export default function MachinerieStep({ sequenceId }: MachinerieStepProps) {
     
     // Utiliser le nouveau système
     enterFormMode(
-      () => {
+      async () => {
         // Cette fonction sera appelée quand on clique sur "Créer" dans le footer
-        console.log('Submit machinerie form')
+        await formRef.current?.submitForm()
       },
       () => {
         // Fonction d'annulation - le contexte gère automatiquement la sortie du mode formulaire
@@ -58,9 +55,9 @@ export default function MachinerieStep({ sequenceId }: MachinerieStepProps) {
     
     // Utiliser le nouveau système
     enterFormMode(
-      () => {
+      async () => {
         // Cette fonction sera appelée quand on clique sur "Modifier" dans le footer
-        console.log('Submit machinerie form')
+        await formRef.current?.submitForm()
       },
       () => {
         // Fonction d'annulation - le contexte gère automatiquement la sortie du mode formulaire
@@ -98,6 +95,7 @@ export default function MachinerieStep({ sequenceId }: MachinerieStepProps) {
   if (viewMode === 'form') {
     return (
       <MachinerieForm
+        ref={formRef}
         sequenceId={currentSequenceId}
         machinerie={editingMachinerie}
         onCancel={handleBackToList}
