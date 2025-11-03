@@ -10,7 +10,6 @@ import { Project } from '@/lib/services/projects'
 import ProjectCard from '@/components/projects/ProjectCard'
 import ProjectForm, { ProjectFormData } from '@/components/projects/ProjectForm'
 import Button from '@/components/ui/Button'
-import { seedProjects, clearProjects } from '@/utils/seed-projects'
 
 export default function ProjectsPage() {
   const router = useRouter()
@@ -22,37 +21,9 @@ export default function ProjectsPage() {
   const [editingProject, setEditingProject] = useState<Project | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleSeedProjects = async () => {
-    const loadingToast = toast.loading('Création des projets d\'exemple...')
-    const success = await seedProjects()
-    if (success) {
-      toast.success('Projets d\'exemple créés avec succès', {
-        id: loadingToast,
-      })
-      refetch() // Recharger la liste
-    } else {
-      toast.error('Erreur lors de la création des projets', {
-        id: loadingToast,
-      })
-    }
-  }
+  
 
-  const handleClearProjects = async () => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer tous les projets ?')) {
-      const loadingToast = toast.loading('Suppression des projets...')
-      const success = await clearProjects()
-      if (success) {
-        toast.success('Tous les projets ont été supprimés', {
-          id: loadingToast,
-        })
-        refetch() // Recharger la liste
-      } else {
-        toast.error('Erreur lors de la suppression des projets', {
-          id: loadingToast,
-        })
-      }
-    }
-  }
+  
 
   // Grouper les projets par année (basé sur start_date)
   const projectsByYear = projects.reduce((acc, project) => {
@@ -235,18 +206,7 @@ export default function ProjectsPage() {
               >
                 + Nouveau projet
               </Button>
-              <button
-                onClick={handleSeedProjects}
-                className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm"
-              >
-                + Projets test
-              </button>
-              <button
-                onClick={handleClearProjects}
-                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm"
-              >
-                🗑️ Vider
-              </button>
+              
             </div>
           </div>
         </div>
