@@ -3,6 +3,7 @@
 
 import { useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import { useCurrentProject } from '@/lib/currentProject-supabase'
 import { useSequences } from '@/hooks/useSequences'
 import { useSidebar } from '@/hooks/useSidebar'
@@ -174,14 +175,16 @@ export default function BreakdownPage() {
                   + Créer une séquence
                 </Button>
                 
-                {sequences.length > 0 && (
-                  <Button variant="default" className="w-full mb-4" onClick={handleEditClick}>
-                    ✏️ Modifier une séquence
-                  </Button>
-                )}
+                
 
                 <p className="text-gray-400 mb-6">
-                  {sequences.length} séquences créées — voir la liste
+                  {sequences.length} séquences créées 
+                </p>
+                {/* p - voir la liste redirect list sequences */}
+                <p className="text-gray-400 mb-6 hover:text-blue-400 transition-colors duration-300">
+                  <Link href="/sequences" className="underline hover:text-blue-300">
+                    liste des séquences
+                  </Link>
                 </p>
               </div>
 
