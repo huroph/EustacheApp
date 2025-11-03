@@ -40,7 +40,7 @@ export function useProjects() {
   }) => {
     try {
       const newProject = await ProjectsService.create(projectData)
-      setProjects(prev => [newProject, ...prev])
+      await loadProjects() // Recharger pour voir la numérotation automatique
       return newProject
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors de la création')
@@ -65,8 +65,8 @@ export function useProjects() {
 
   const deleteProject = async (id: string) => {
     try {
-      await ProjectsService.delete(id)
-      setProjects(prev => prev.filter(project => project.id !== id))
+      await ProjectsService.delete(id) // Inclut la renumérotation automatique
+      await loadProjects() // Recharger pour voir les nouveaux numéros
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors de la suppression')
       throw err

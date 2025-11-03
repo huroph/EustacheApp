@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+/* Police système comme fallback temporaire */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;

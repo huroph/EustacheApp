@@ -1,12 +1,9 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import AuthProviderWrapper from '@/components/AuthProviderWrapper'
 
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-});
+// Utilisation d'une police système temporaire pour éviter les problèmes avec Google Fonts + Turbopack
+const fontClassName = "font-system";
 
 export const metadata: Metadata = {
   title: "EustacheApp",
@@ -21,7 +18,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${inter.variable} font-sans antialiased`}
+        className="font-sans antialiased"
       >
         <AuthProviderWrapper>
           {children}
