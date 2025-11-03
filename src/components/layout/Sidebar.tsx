@@ -87,7 +87,7 @@ export default function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: Si
       </nav>
 
       {/* Section bas de sidebar - Projet sélectionné */}
-      <div className="border-t border-gray-800 p-4">
+      <div className="p-4">
         {isLoading ? (
           <div className={cn('space-y-2', isCollapsed && 'items-center')}>
             {!isCollapsed && (
@@ -99,47 +99,46 @@ export default function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: Si
         ) : project ? (
           <div
             onClick={handleProjectClick}
-            className="cursor-pointer hover:bg-gray-800 rounded-md p-3 transition-colors"
+            className="cursor-pointer bg-blue-900/30 hover:bg-blue-800/40 border border-blue-700/50 rounded-xl p-4 transition-all duration-300 hover:scale-[1.02]"
           >
             {!isCollapsed && (
               <div className="space-y-2">
-                <div className="text-xs text-gray-400 uppercase tracking-wide">
-                  Projet sélectionné
-                </div>
-                <div className="text-sm font-medium text-white truncate">
+                <div className="text-blue-200 text-lg font-medium leading-tight">
                   {project.title}
                 </div>
-                <div className="text-xs text-gray-500">
+                <div className="text-blue-300/70 text-sm">
                   {sequencesCount} séquences
                 </div>
               </div>
             )}
             {isCollapsed && (
               <div className="flex items-center justify-center">
-                <FolderOpen className="h-4 w-4 text-white" />
+                <FolderOpen className="h-5 w-5 text-blue-200" />
               </div>
             )}
           </div>
         ) : (
-          <div className={cn('space-y-2', isCollapsed && 'items-center')}>
+          <div
+            onClick={handleProjectClick}
+            className="cursor-pointer bg-gray-800/50 hover:bg-gray-700/60 border border-gray-600/50 rounded-xl p-4 transition-all duration-300 hover:scale-[1.02]"
+          >
             {!isCollapsed && (
-              <div className="text-xs text-gray-400 uppercase tracking-wide mb-2">
-                Aucun projet sélectionné
+              <div className="space-y-2">
+                <div className="text-gray-300 text-lg font-medium">
+                  Aucun projet
+                </div>
+                <div className="text-gray-400 text-sm">
+                  Cliquez pour sélectionner
+                </div>
+              </div>
+            )}
+            {isCollapsed && (
+              <div className="flex items-center justify-center">
+                <FolderOpen className="h-5 w-5 text-gray-400" />
               </div>
             )}
           </div>
         )}
-        
-        <Button
-          onClick={handleProjectClick}
-          className={cn(
-            'w-full mt-3 bg-gray-700 hover:bg-gray-600 text-white text-sm',
-            isCollapsed && 'px-2'
-          )}
-        >
-          <FolderOpen className={cn('h-4 w-4', !isCollapsed && 'mr-2')} />
-          {!isCollapsed && (project ? 'Changer de projet' : 'Sélectionner un projet')}
-        </Button>
       </div>
     </div>
   )
