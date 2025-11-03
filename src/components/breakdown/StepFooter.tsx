@@ -98,10 +98,10 @@ export default function StepFooter({
               <Button 
                 type="button" 
                 variant="secondary" 
-                onClick={isFirst && onCancel ? onCancel : onPrev}
+                onClick={isFirst ? onCancel : onPrev}
                 disabled={isFirst && !onCancel}
               >
-                {isFirst && onCancel ? 'Annuler' : 'Précédent'}
+                {isFirst ? 'Annuler' : 'Précédent'}
               </Button>
               <span className="text-gray-400 text-sm">
                 {currentIndex + 1} of {total}

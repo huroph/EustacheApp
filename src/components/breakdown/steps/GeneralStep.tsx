@@ -27,12 +27,13 @@ interface GeneralStepProps {
   showSuccess: boolean
   sequenceId?: string  // Pour les composants Supabase
   onTitleChange?: (title: string) => void  // Nouvelle prop pour gérer le changement de titre
+  onFormChange?: () => void  // Nouvelle prop pour notifier les changements
 }
 
 const GENERAL_SUB_STEPS = ["Informations", "Décors", "Scènes"] as const
 type GeneralSubStep = typeof GENERAL_SUB_STEPS[number]
 
-export default function GeneralStep({ formData, setFormData, showSuccess, sequenceId, onTitleChange }: GeneralStepProps) {
+export default function GeneralStep({ formData, setFormData, showSuccess, sequenceId, onTitleChange, onFormChange }: GeneralStepProps) {
   const [activeTab, setActiveTab] = useState<'informations' | 'decors' | 'scenes'>('informations')
   const { project } = useCurrentProject()
   const { createSequence, isLoading } = useSequences()
@@ -121,6 +122,7 @@ export default function GeneralStep({ formData, setFormData, showSuccess, sequen
               setFormData={setFormData}
               showSuccess={showSuccess}
               onTitleChange={onTitleChange}
+              onFormChange={onFormChange}
             />
           </div>
         )}

@@ -16,9 +16,10 @@ interface InformationsFormProps {
   setFormData: (data: any) => void
   showSuccess: boolean
   onTitleChange?: (title: string) => void  // Nouvelle prop
+  onFormChange?: () => void  // Nouvelle prop pour notifier les changements
 }
 
-export default function InformationsForm({ formData, setFormData, showSuccess, onTitleChange }: InformationsFormProps) {
+export default function InformationsForm({ formData, setFormData, showSuccess, onTitleChange, onFormChange }: InformationsFormProps) {
   const availableColors = [
     { id: 'blue', color: 'bg-blue-500', name: 'Bleu' },
     { id: 'green', color: 'bg-green-500', name: 'Vert' },
@@ -33,6 +34,12 @@ export default function InformationsForm({ formData, setFormData, showSuccess, o
 
   const handleColorChange = (colorId: string) => {
     setFormData((prev: any) => ({ ...prev, colorId }))
+    if (onFormChange) onFormChange()
+  }
+
+  const handleFormDataChange = (field: string, value: string) => {
+    setFormData((prev: any) => ({ ...prev, [field]: value }))
+    if (onFormChange) onFormChange()
   }
 
   return (
@@ -57,7 +64,7 @@ export default function InformationsForm({ formData, setFormData, showSuccess, o
               value={formData.title}
               onChange={(e) => {
                 const newTitle = e.target.value
-                setFormData((prev: any) => ({ ...prev, title: newTitle }))
+                handleFormDataChange('title', newTitle)
                 if (onTitleChange) {
                   onTitleChange(newTitle)
                 }
@@ -75,7 +82,7 @@ export default function InformationsForm({ formData, setFormData, showSuccess, o
               id="code"
               type="text"
               value={formData.code}
-              onChange={(e) => setFormData((prev: any) => ({ ...prev, code: e.target.value }))}
+              onChange={(e) => handleFormDataChange('code', e.target.value)}
               className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -109,7 +116,7 @@ export default function InformationsForm({ formData, setFormData, showSuccess, o
           <select
             id="status"
             value={formData.status}
-            onChange={(e) => setFormData((prev: any) => ({ ...prev, status: e.target.value }))}
+            onChange={(e) => handleFormDataChange('status', e.target.value)}
             className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             {statusOptions.map(status => (
@@ -127,7 +134,7 @@ export default function InformationsForm({ formData, setFormData, showSuccess, o
             id="location"
             type="text"
             value={formData.location}
-            onChange={(e) => setFormData((prev: any) => ({ ...prev, location: e.target.value }))}
+            onChange={(e) => handleFormDataChange('location', e.target.value)}
             placeholder="Adresse ou nom du lieu..."
             className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
@@ -141,7 +148,7 @@ export default function InformationsForm({ formData, setFormData, showSuccess, o
           <textarea
             id="summary"
             value={formData.summary}
-            onChange={(e) => setFormData((prev: any) => ({ ...prev, summary: e.target.value }))}
+            onChange={(e) => handleFormDataChange('summary', e.target.value)}
             placeholder="Description de la scène..."
             rows={3}
             className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
@@ -158,7 +165,7 @@ export default function InformationsForm({ formData, setFormData, showSuccess, o
               id="preMintage"
               type="text"
               value={formData.preMintage}
-              onChange={(e) => setFormData((prev: any) => ({ ...prev, preMintage: e.target.value }))}
+              onChange={(e) => handleFormDataChange('preMintage', e.target.value)}
               className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -171,7 +178,7 @@ export default function InformationsForm({ formData, setFormData, showSuccess, o
               id="ett"
               type="text"
               value={formData.ett}
-              onChange={(e) => setFormData((prev: any) => ({ ...prev, ett: e.target.value }))}
+              onChange={(e) => handleFormDataChange('ett', e.target.value)}
               className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -183,7 +190,7 @@ export default function InformationsForm({ formData, setFormData, showSuccess, o
             <select
               id="effet"
               value={formData.effet}
-              onChange={(e) => setFormData((prev: any) => ({ ...prev, effet: e.target.value }))}
+              onChange={(e) => handleFormDataChange('effet', e.target.value)}
               className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               {effetOptions.map(effet => (
@@ -199,7 +206,7 @@ export default function InformationsForm({ formData, setFormData, showSuccess, o
             <select
               id="type"
               value={formData.type}
-              onChange={(e) => setFormData((prev: any) => ({ ...prev, type: e.target.value }))}
+              onChange={(e) => handleFormDataChange('type', e.target.value)}
               className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               {typeOptions.map(type => (

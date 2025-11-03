@@ -57,6 +57,19 @@ export default function CreateSequenceForm({ onCancel, editMode = false, sequenc
     type: 'INT'
   })
   const [showSuccess, setShowSuccess] = useState(false)
+  const [initialFormData, setInitialFormData] = useState({
+    code: '',
+    title: '',
+    colorId: 'blue',
+    status: 'En attente',
+    location: '',
+    summary: '',
+    preMintage: '00:00',
+    ett: '00:00',
+    effet: 'JOUR',
+    type: 'INT'
+  })
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
 
   // ÉTAPE 1: Créer automatiquement une séquence vide à l'ouverture (mode création seulement)
   useEffect(() => {
@@ -97,6 +110,20 @@ export default function CreateSequenceForm({ onCancel, editMode = false, sequenc
               color_id: newSequence.color_id
             }))
             
+            // Sauvegarder l'état initial pour détecter les changements
+            setInitialFormData({
+              code: newSequence.code,
+              title: newSequence.title,
+              colorId: newSequence.color_id || 'blue',
+              status: newSequence.status,
+              location: '',
+              summary: '',
+              preMintage: '00:00',
+              ett: '00:00',
+              effet: 'JOUR',
+              type: 'INT'
+            })
+            
             toast.success(`Séquence ${newSequence.code} créée et prête à être configurée`)
           }
         } catch (error) {
@@ -115,7 +142,7 @@ export default function CreateSequenceForm({ onCancel, editMode = false, sequenc
     if (editMode && sequenceId && sequences.length > 0) {
       const sequence = sequences.find(s => s.id === sequenceId)
       if (sequence) {
-        setFormData({
+        const loadedData = {
           code: sequence.code || 'SEQ-1',
           title: sequence.title,
           colorId: sequence.color_id || 'blue',
@@ -126,15 +153,41 @@ export default function CreateSequenceForm({ onCancel, editMode = false, sequenc
           ett: sequence.ett || '00:00',
           effet: sequence.time_of_day || 'JOUR',
           type: sequence.location_type || 'INT'
-        })
+        }
+        
+        setFormData(loadedData)
+        // Sauvegarder l'état initial pour détecter les changements en mode édition
+        setInitialFormData(loadedData)
       }
     }
   }, [editMode, sequenceId, sequences])
 
+  // Détecter les changements dans le formulaire
+  useEffect(() => {
+    const hasChanges = JSON.stringify(formData) !== JSON.stringify(initialFormData)
+    setHasUnsavedChanges(hasChanges)
+  }, [formData, initialFormData])
+
   const currentIndex = STEPS.indexOf(currentStep)
 
-  // ÉTAPE 2: Gestion de l'annulation avec suppression de la séquence vide
+  // ÉTAPE 2: Gestion de l'annulation avec suppression de la séquence vide et alerte modifications
   const handleCancel = async () => {
+    // Vérifier s'il y a des modifications non enregistrées
+    if (hasUnsavedChanges) {
+      const confirmExit = window.confirm(
+        '⚠️ Vous avez des modifications non enregistrées.\n\nÊtes-vous sûr de vouloir fermer sans enregistrer ?'
+      )
+      
+      if (!confirmExit) {
+        return // L'utilisateur a choisi de rester
+      }
+      
+      // Notifier selon le mode
+      if (editMode) {
+        toast('Modifications annulées - aucune modification n\'a été sauvegardée', { icon: '↩️' })
+      }
+    }
+    
     // Si on a créé une séquence vide (mode création) et qu'on est à la première étape
     if (!editMode && createdSequenceId && currentStep === "Général") {
       try {
@@ -210,6 +263,10 @@ export default function CreateSequenceForm({ onCancel, editMode = false, sequenc
           })
           setShowSuccess(true)
           
+          // Mettre à jour l'état initial après sauvegarde réussie
+          setInitialFormData(formData)
+          setHasUnsavedChanges(false)
+          
           setTimeout(() => {
             setShowSuccess(false)
             // Ne pas rediriger pour permettre l'édition des décors/scènes
@@ -235,6 +292,9 @@ export default function CreateSequenceForm({ onCancel, editMode = false, sequenc
             id: loadingToast,
           })
           setShowSuccess(true)
+          
+          // Réinitialiser l'état des modifications après création réussie
+          setHasUnsavedChanges(false)
           
           setTimeout(() => {
             setShowSuccess(false)
@@ -265,6 +325,7 @@ export default function CreateSequenceForm({ onCancel, editMode = false, sequenc
             setFormData={setFormData}
             showSuccess={showSuccess}
             sequenceId={currentSequenceId}
+            onFormChange={() => setHasUnsavedChanges(true)}
           />
         )
       case "Rôle":
@@ -282,7 +343,7 @@ export default function CreateSequenceForm({ onCancel, editMode = false, sequenc
       case "Machinerie":
         return <MachinerieStep sequenceId={currentSequenceId || ''} />
       default:
-        return <GeneralStep formData={formData} setFormData={setFormData} showSuccess={showSuccess} sequenceId={currentSequenceId} />
+        return <GeneralStep formData={formData} setFormData={setFormData} showSuccess={showSuccess} sequenceId={currentSequenceId} onFormChange={() => setHasUnsavedChanges(true)} />
     }
   }
 
@@ -315,7 +376,7 @@ export default function CreateSequenceForm({ onCancel, editMode = false, sequenc
             onNext={goNext}
             onSubmit={handleSubmit}
             editMode={editMode}
-            onCancel={!editMode ? handleCancel : undefined}
+            onCancel={handleCancel}
           />
         </div>
       </div>
