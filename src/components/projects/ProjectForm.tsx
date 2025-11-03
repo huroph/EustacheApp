@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react'
 import { Project } from '@/lib/services/projects'
+import { StorageService } from '@/lib/services/storage'
 import Button from '@/components/ui/Button'
 
 interface ProjectFormProps {
@@ -34,6 +35,8 @@ export default function ProjectForm({ project, onSubmit, onCancel, isLoading }: 
   })
 
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [scriptFile, setScriptFile] = useState<File | null>(null)
+  const [isUploadingScript, setIsUploadingScript] = useState(false)
 
   useEffect(() => {
     if (project) {
@@ -72,9 +75,24 @@ export default function ProjectForm({ project, onSubmit, onCancel, isLoading }: 
     if (!validate()) return
 
     try {
-      await onSubmit(formData)
+      let scriptUrl = formData.script_file
+
+      // Upload du script PDF si un nouveau fichier est sélectionné
+      if (scriptFile) {
+        setIsUploadingScript(true)
+        // Créer un ID temporaire pour le projet si c'est une création
+        const projectId = project?.id || `temp-${Date.now()}`
+        scriptUrl = await StorageService.uploadScriptPDF(scriptFile, projectId)
+      }
+
+      await onSubmit({
+        ...formData,
+        script_file: scriptUrl
+      })
     } catch (error) {
       console.error('Erreur lors de la soumission:', error)
+    } finally {
+      setIsUploadingScript(false)
     }
   }
 
@@ -84,6 +102,20 @@ export default function ProjectForm({ project, onSubmit, onCancel, isLoading }: 
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }))
     }
+  }
+
+  const handleScriptFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const validationError = StorageService.validatePDFFile(file)
+    if (validationError) {
+      setErrors(prev => ({ ...prev, script_file: validationError }))
+      return
+    }
+
+    setScriptFile(file)
+    setErrors(prev => ({ ...prev, script_file: '' }))
   }
 
   return (
@@ -131,19 +163,31 @@ export default function ProjectForm({ project, onSubmit, onCancel, isLoading }: 
           />
         </div>
 
-        {/* Script */}
+        {/* Script PDF */}
         <div>
           <label htmlFor="script_file" className="block text-sm font-medium text-gray-400 mb-1">
-            Fichier script
+            Script PDF
           </label>
           <input
-            type="text"
+            type="file"
             id="script_file"
-            value={formData.script_file}
-            onChange={(e) => handleChange('script_file', e.target.value)}
-            className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
-            placeholder="script.pdf"
+            accept=".pdf"
+            onChange={handleScriptFileChange}
+            className={`w-full bg-gray-700 border rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 file:mr-4 file:py-1 file:px-2 file:rounded file:border-0 file:text-sm file:bg-blue-600 file:text-white hover:file:bg-blue-700 ${
+              errors.script_file ? 'border-red-500' : 'border-gray-600'
+            }`}
           />
+          {formData.script_file && !scriptFile && (
+            <p className="text-sm text-green-400 mt-1">
+              ✓ Script actuel : {formData.script_file.split('/').pop()}
+            </p>
+          )}
+          {scriptFile && (
+            <p className="text-sm text-blue-400 mt-1">
+              📄 Nouveau fichier : {scriptFile.name}
+            </p>
+          )}
+          {errors.script_file && <p className="text-red-400 text-sm mt-1">{errors.script_file}</p>}
         </div>
 
         {/* Dates */}
@@ -214,16 +258,16 @@ export default function ProjectForm({ project, onSubmit, onCancel, isLoading }: 
         <div className="flex space-x-3 pt-4">
           <Button 
             type="submit" 
-            disabled={isLoading}
+            disabled={isLoading || isUploadingScript}
             className="flex-1"
           >
-            {isLoading ? 'Enregistrement...' : (project ? 'Modifier' : 'Créer')}
+            {isUploadingScript ? 'Upload du script...' : isLoading ? 'Enregistrement...' : (project ? 'Modifier' : 'Créer')}
           </Button>
           <Button 
             type="button" 
             variant="outline" 
             onClick={onCancel}
-            disabled={isLoading}
+            disabled={isLoading || isUploadingScript}
           >
             Annuler
           </Button>

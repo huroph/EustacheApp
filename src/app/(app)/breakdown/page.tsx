@@ -9,6 +9,7 @@ import { useSidebar } from '@/hooks/useSidebar'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 import CreateSequenceForm from '@/components/breakdown/CreateSequenceForm'
+import ScriptViewer from '@/components/breakdown/ScriptViewer'
 
 export default function BreakdownPage() {
   const router = useRouter()
@@ -93,17 +94,12 @@ export default function BreakdownPage() {
             isCreateMode || isEditMode ? 'lg:col-span-7' : ''
           }`}>
             {isCreateMode || isEditMode ? (
-              // Mode création/édition : affichage du PDF
-              <div className="bg-slate-900 border border-slate-700 rounded-lg p-4 h-full">
-                <div className="text-white text-lg font-semibold mb-4 border-b border-slate-600 pb-2">
-                  Script : Joyeux Noël {isEditMode ? '(Mode édition)' : '(Mode création)'}
-                </div>
-                <iframe
-                  src="/scenarios/Joyeux-Noël.pdf"
-                  className="w-full h-[70vh] min-h-[400px] max-h-[800px] rounded border border-slate-600"
-                  title="Script Joyeux Noël"
-                />
-              </div>
+              // Mode création/édition : affichage du PDF dynamique
+              <ScriptViewer 
+                scriptUrl={project.script_file}
+                projectTitle={project.title}
+                mode={isEditMode ? 'edition' : 'creation'}
+              />
             ) : (
               // Mode normal : infos générales
               <div className="bg-white rounded-lg p-6 overflow-y-auto shadow-lg border border-gray-200">
@@ -111,7 +107,7 @@ export default function BreakdownPage() {
                   <div className="font-bold text-center text-xl mb-6 text-gray-900 border-b border-gray-200 pb-3" style={{color: '#111827'}}>{project.title.toUpperCase()}</div>
                   
                   <div className="space-y-3 bg-gray-50 p-4 rounded-lg">
-                    <p className="text-gray-800" style={{color: '#1f2937'}}><strong className="text-gray-900" style={{color: '#111827'}}>Script :</strong> <span className="text-blue-700" style={{color: '#1d4ed8'}}>{project.script_file || 'Non défini'}</span></p>
+                    <p className="text-gray-800" style={{color: '#1f2937'}}><strong className="text-gray-900" style={{color: '#111827'}}>Script :</strong> <span className="text-blue-700" style={{color: '#1d4ed8'}}>{project.script_file ? project.script_file.split('/').pop() : 'Non défini'}</span></p>
                     <p className="text-gray-800" style={{color: '#1f2937'}}><strong className="text-gray-900" style={{color: '#111827'}}>Période de tournage :</strong> <span className="text-gray-700" style={{color: '#374151'}}>{project.start_date && project.end_date ? `${new Date(project.start_date).toLocaleDateString('fr-FR')} → ${new Date(project.end_date).toLocaleDateString('fr-FR')}` : 'Non définie'}</span></p>
                     <p className="text-gray-800" style={{color: '#1f2937'}}><strong className="text-gray-900" style={{color: '#111827'}}>Année :</strong> <span className="text-gray-700" style={{color: '#374151'}}>{project.start_date ? new Date(project.start_date).getFullYear() : new Date().getFullYear()}</span></p>
                     <p className="text-gray-800" style={{color: '#1f2937'}}><strong className="text-gray-900" style={{color: '#111827'}}>Séquences créées :</strong> <span className="text-green-700 font-semibold" style={{color: '#15803d'}}>{sequences.length}</span></p>

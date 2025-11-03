@@ -85,31 +85,7 @@ export default function SequencesPage() {
     router.push('/breakdown')
   }
 
-  const handleCreateTestData = async () => {
-    if (!project?.id) {
-      toast.error('Aucun projet sélectionné')
-      return
-    }
-
-    setSeedLoading(true)
-    const loadingToast = toast.loading('Création des données de test...')
-    
-    try {
-      await seedCompleteSequence(project.id)
-      toast.success('Données de test créées avec succès !', {
-        id: loadingToast,
-      })
-      // Recharger les séquences après la création
-      await refetch()
-    } catch (error: any) {
-      console.error('Erreur lors de la création des données de test:', error)
-      toast.error(`Erreur: ${error.message}`, {
-        id: loadingToast,
-      })
-    } finally {
-      setSeedLoading(false)
-    }
-  }
+  
 
   if (projectLoading || sequencesLoading) {
     return (
@@ -149,22 +125,8 @@ export default function SequencesPage() {
             <div className="flex items-center justify-between mb-4 flex-shrink-0">
               <h2 className="text-white font-semibold">Séquences</h2>
               <div className="flex items-center space-x-2">
-                <button
-                  onClick={refetch}
-                  className="bg-gray-700 hover:bg-gray-600 text-white text-sm rounded px-2 py-1"
-                  title="Recharger"
-                >
-                  ↻
-                </button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleCreateTestData}
-                  disabled={seedLoading}
-                  className="text-xs"
-                >
-                  {seedLoading ? '...' : '🎬 Test'}
-                </Button>
+               
+              
                 <select className="bg-gray-800 text-white text-sm rounded px-3 py-1 border border-gray-600">
                   <option>All</option>
                   <option>EXT</option>
