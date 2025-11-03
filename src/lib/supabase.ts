@@ -32,6 +32,7 @@ export type Database = {
           end_date: string | null
           cover_url: string | null
           status: 'En préparation' | 'En cours' | 'Terminé' | 'Archivé'
+          user_id: string
           created_at: string
           updated_at: string
         }
@@ -45,6 +46,7 @@ export type Database = {
           end_date?: string | null
           cover_url?: string | null
           status?: 'En préparation' | 'En cours' | 'Terminé' | 'Archivé'
+          user_id: string
           created_at?: string
           updated_at?: string
         }
@@ -58,6 +60,7 @@ export type Database = {
           end_date?: string | null
           cover_url?: string | null
           status?: 'En préparation' | 'En cours' | 'Terminé' | 'Archivé'
+          user_id?: string
           created_at?: string
           updated_at?: string
         }

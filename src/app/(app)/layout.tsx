@@ -1,5 +1,8 @@
 // src/app/(app)/layout.tsx
+'use client'
+
 import AppShell from '@/components/layout/AppShell'
+import AuthGuard from '@/components/AuthGuard'
 import { Toaster } from 'react-hot-toast'
 
 export default function AppLayout({
@@ -8,7 +11,7 @@ export default function AppLayout({
   children: React.ReactNode
 }) {
   return (
-    <>
+    <AuthGuard>
       <AppShell>{children}</AppShell>
       <Toaster 
         position="top-right"
@@ -35,6 +38,6 @@ export default function AppLayout({
           },
         }}
       />
-    </>
+    </AuthGuard>
   )
 }

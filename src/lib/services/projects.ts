@@ -10,12 +10,16 @@ type ProjectUpdate = Database['public']['Tables']['projects']['Update']
 export class ProjectsService {
   
   /**
-   * Récupérer tous les projets
+   * Récupérer tous les projets de l'utilisateur connecté
    */
   static async getAll(): Promise<Project[]> {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Utilisateur non connecté')
+
     const { data, error } = await supabase
       .from('projects')
       .select('*')
+      .eq('user_id', user.id)
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -27,18 +31,22 @@ export class ProjectsService {
   }
 
   /**
-   * Récupérer un projet par ID
+   * Récupérer un projet par ID (vérifie que le projet appartient à l'utilisateur)
    */
   static async getById(id: string): Promise<Project | null> {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Utilisateur non connecté')
+
     const { data, error } = await supabase
       .from('projects')
       .select('*')
       .eq('id', id)
+      .eq('user_id', user.id)
       .single()
 
     if (error) {
       if (error.code === 'PGRST116') {
-        return null // Projet non trouvé
+        return null // Projet non trouvé ou pas accessible
       }
       console.error('Erreur lors de la récupération du projet:', error)
       throw new Error(`Erreur lors de la récupération du projet: ${error.message}`)
@@ -50,10 +58,13 @@ export class ProjectsService {
   /**
    * Créer un nouveau projet
    */
-  static async create(project: ProjectInsert): Promise<Project> {
+  static async create(project: Omit<ProjectInsert, 'user_id'>): Promise<Project> {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Utilisateur non connecté')
+
     const { data, error } = await supabase
       .from('projects')
-      .insert([project])
+      .insert([{ ...project, user_id: user.id }])
       .select()
       .single()
 
@@ -66,13 +77,17 @@ export class ProjectsService {
   }
 
   /**
-   * Mettre à jour un projet
+   * Mettre à jour un projet (vérifie que le projet appartient à l'utilisateur)
    */
   static async update(id: string, updates: ProjectUpdate): Promise<Project> {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Utilisateur non connecté')
+
     const { data, error } = await supabase
       .from('projects')
       .update(updates)
       .eq('id', id)
+      .eq('user_id', user.id)
       .select()
       .single()
 
@@ -85,13 +100,17 @@ export class ProjectsService {
   }
 
   /**
-   * Supprimer un projet
+   * Supprimer un projet (vérifie que le projet appartient à l'utilisateur)
    */
   static async delete(id: string): Promise<void> {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Utilisateur non connecté')
+
     const { error } = await supabase
       .from('projects')
       .delete()
       .eq('id', id)
+      .eq('user_id', user.id)
 
     if (error) {
       console.error('Erreur lors de la suppression du projet:', error)
@@ -100,12 +119,16 @@ export class ProjectsService {
   }
 
   /**
-   * Récupérer les projets par année
+   * Récupérer les projets par année pour l'utilisateur connecté
    */
   static async getByYear(year: number): Promise<Project[]> {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Utilisateur non connecté')
+
     const { data, error } = await supabase
       .from('projects')
       .select('*')
+      .eq('user_id', user.id)
       .gte('start_date', `${year}-01-01`)
       .lt('start_date', `${year + 1}-01-01`)
       .order('start_date', { ascending: true })
@@ -119,12 +142,16 @@ export class ProjectsService {
   }
 
   /**
-   * Rechercher des projets
+   * Rechercher des projets de l'utilisateur connecté
    */
   static async search(query: string): Promise<Project[]> {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Utilisateur non connecté')
+
     const { data, error } = await supabase
       .from('projects')
       .select('*')
+      .eq('user_id', user.id)
       .or(`title.ilike.%${query}%,description.ilike.%${query}%,code.ilike.%${query}%`)
       .order('created_at', { ascending: false })
 
@@ -138,4 +165,5 @@ export class ProjectsService {
 }
 
 // Types exportés pour utilisation dans les composants
-export type { Project, ProjectInsert, ProjectUpdate }
+export type { Project, ProjectUpdate }
+export type ProjectCreateInput = Omit<ProjectInsert, 'user_id'>

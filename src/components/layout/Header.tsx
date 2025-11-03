@@ -3,13 +3,27 @@
 
 import { Menu, Search, User } from 'lucide-react'
 import Button from '@/components/ui/Button'
+import Link from 'next/link'
+import { useAuth } from '@/hooks/useAuth'
 
 interface HeaderProps {
   onToggleSidebar: () => void
   sidebarCollapsed: boolean
 }
 
+const getRoleLabel = (role: string | null): string => {
+  switch (role) {
+    case 'director': return 'Réalisateur'
+    case 'producer': return 'Producteur'
+    case 'assistant': return 'Assistant réalisateur'
+    case 'scriptwriter': return 'Scénariste'
+    case 'other': return 'Autre'
+    default: return '—'
+  }
+}
+
 export default function Header({ onToggleSidebar, sidebarCollapsed }: HeaderProps) {
+  const { user, role, logout } = useAuth()
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-gray-900 border-gray-800">
       <div className="flex h-16 items-center px-4">
@@ -46,15 +60,24 @@ export default function Header({ onToggleSidebar, sidebarCollapsed }: HeaderProp
           />
         </div>
 
-        {/* Avatar utilisateur (mock) */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="ml-4"
-          aria-label="Menu utilisateur"
-        >
-          <User className="h-5 w-5" />
-        </Button>
+        <div className="ml-4 flex items-center space-x-3 text-sm text-gray-200">
+          {user ? (
+            <>
+              <div className="text-right">
+                <div className="font-medium text-white">{user.email}</div>
+                <div className="text-xs text-gray-400">{getRoleLabel(role)}</div>
+              </div>
+              <Button variant="ghost" size="icon" onClick={() => logout()} aria-label="Se déconnecter">
+                <User className="h-5 w-5" />
+              </Button>
+            </>
+          ) : (
+            <div className="flex items-center space-x-2">
+              <Link href="/login" className="text-sm text-gray-300 hover:underline">Se connecter</Link>
+              <Link href="/register" className="text-sm text-gray-300 hover:underline">S'inscrire</Link>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   )
