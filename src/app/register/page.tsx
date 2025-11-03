@@ -3,7 +3,7 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import RegisterForm from '@/components/auth/RegisterForm'
+import { RegisterForm } from '@/components/auth/RegisterForm'
 import { AuthProvider, useAuth } from '@/hooks/useAuth'
 import Link from 'next/link'
 import { Toaster } from 'react-hot-toast'

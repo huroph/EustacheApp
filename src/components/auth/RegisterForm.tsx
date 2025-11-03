@@ -1,22 +1,28 @@
-// src/components/auth/RegisterForm.tsx
 'use client'
 
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import Button from '@/components/ui/Button'
+import { 
+  EnvelopeIcon, 
+  LockClosedIcon, 
+  EyeIcon, 
+  EyeSlashIcon, 
+  UserIcon 
+} from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
-import { EyeIcon, EyeSlashIcon, EnvelopeIcon, LockClosedIcon, UserIcon } from '@heroicons/react/24/outline'
 
 const ROLES = [
-  { value: 'director', label: 'Réalisateur', icon: '🎬' },
-  { value: 'producer', label: 'Producteur', icon: '💼' },
-  { value: 'assistant', label: 'Assistant réalisateur', icon: '📋' },
-  { value: 'scriptwriter', label: 'Scénariste', icon: '✍️' },
-  { value: 'other', label: 'Autre', icon: '👤' },
+  { value: 'producer', label: 'Producteur/trice', icon: '🎬' },
+  { value: 'director', label: 'Réalisateur/trice', icon: '🎭' },
+  { value: 'assistant', label: 'Assistant/e', icon: '🤝' },
+  { value: 'actor', label: 'Comédien/ne', icon: '🎭' },
+  { value: 'technician', label: 'Technicien/ne', icon: '🔧' },
+  { value: 'other', label: 'Autre', icon: '👤' }
 ]
 
-export default function RegisterForm() {
+export function RegisterForm() {
   const { register } = useAuth()
   const router = useRouter()
   const [email, setEmail] = useState('')
@@ -26,46 +32,201 @@ export default function RegisterForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  
+  // Track field states for "Reward Early, Punish Late" pattern
+  const [fieldStates, setFieldStates] = useState<{
+    email: { hasError: boolean, wasTouched: boolean, isValid: boolean }
+    password: { hasError: boolean, wasTouched: boolean, isValid: boolean }
+    confirmPassword: { hasError: boolean, wasTouched: boolean, isValid: boolean }
+  }>({
+    email: { hasError: false, wasTouched: false, isValid: false },
+    password: { hasError: false, wasTouched: false, isValid: false },
+    confirmPassword: { hasError: false, wasTouched: false, isValid: false }
+  })
+  
   const [errors, setErrors] = useState<{
     email?: string
     password?: string
     confirmPassword?: string
   }>({})
 
-  const validateForm = () => {
+  // Validation functions
+  const validateEmail = (value: string) => {
+    if (!value) return 'L\'email est requis'
+    if (!/\S+@\S+\.\S+/.test(value)) return 'Format d\'email invalide'
+    return null
+  }
+
+  const validatePassword = (value: string) => {
+    if (!value) return 'Le mot de passe est requis'
+    if (value.length < 8) return 'Le mot de passe doit contenir au moins 8 caractères'
+    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(value)) {
+      return 'Le mot de passe doit contenir au moins une majuscule, une minuscule et un chiffre'
+    }
+    return null
+  }
+
+  const validateConfirmPassword = (value: string, passwordValue: string) => {
+    if (!value) return 'La confirmation est requise'
+    if (value !== passwordValue) return 'Les mots de passe ne correspondent pas'
+    return null
+  }
+
+  // Handle field changes with "Reward Early, Punish Late" logic
+  const handleEmailChange = (value: string) => {
+    setEmail(value)
+    
+    const error = validateEmail(value)
+    const isValid = !error
+    
+    // REWARD EARLY: If field had an error and is now valid, clear error immediately
+    if (fieldStates.email.hasError && isValid) {
+      setErrors(prev => ({ ...prev, email: undefined }))
+      setFieldStates(prev => ({
+        ...prev,
+        email: { ...prev.email, hasError: false, isValid: true }
+      }))
+    }
+    // Update validity state for submit button
+    else if (!fieldStates.email.hasError) {
+      setFieldStates(prev => ({
+        ...prev,
+        email: { ...prev.email, isValid }
+      }))
+    }
+  }
+
+  const handlePasswordChange = (value: string) => {
+    setPassword(value)
+    
+    const error = validatePassword(value)
+    const isValid = !error
+    
+    // REWARD EARLY: If field had an error and is now valid, clear error immediately
+    if (fieldStates.password.hasError && isValid) {
+      setErrors(prev => ({ ...prev, password: undefined }))
+      setFieldStates(prev => ({
+        ...prev,
+        password: { ...prev.password, hasError: false, isValid: true }
+      }))
+    }
+    // Update validity state
+    else if (!fieldStates.password.hasError) {
+      setFieldStates(prev => ({
+        ...prev,
+        password: { ...prev.password, isValid }
+      }))
+    }
+
+    // Also check confirm password if it was entered
+    if (confirmPassword && fieldStates.confirmPassword.wasTouched) {
+      const confirmError = validateConfirmPassword(confirmPassword, value)
+      const confirmIsValid = !confirmError
+      
+      if (fieldStates.confirmPassword.hasError && confirmIsValid) {
+        setErrors(prev => ({ ...prev, confirmPassword: undefined }))
+        setFieldStates(prev => ({
+          ...prev,
+          confirmPassword: { ...prev.confirmPassword, hasError: false, isValid: true }
+        }))
+      }
+    }
+  }
+
+  const handleConfirmPasswordChange = (value: string) => {
+    setConfirmPassword(value)
+    
+    const error = validateConfirmPassword(value, password)
+    const isValid = !error
+    
+    // REWARD EARLY: If field had an error and is now valid, clear error immediately
+    if (fieldStates.confirmPassword.hasError && isValid) {
+      setErrors(prev => ({ ...prev, confirmPassword: undefined }))
+      setFieldStates(prev => ({
+        ...prev,
+        confirmPassword: { ...prev.confirmPassword, hasError: false, isValid: true }
+      }))
+    }
+    // Update validity state
+    else if (!fieldStates.confirmPassword.hasError) {
+      setFieldStates(prev => ({
+        ...prev,
+        confirmPassword: { ...prev.confirmPassword, isValid }
+      }))
+    }
+  }
+
+  // PUNISH LATE: Validate on blur (when user leaves field)
+  const handleEmailBlur = () => {
+    if (!email) return // Don't validate empty fields on blur
+    
+    const error = validateEmail(email)
+    setFieldStates(prev => ({
+      ...prev,
+      email: { hasError: !!error, wasTouched: true, isValid: !error }
+    }))
+    
+    if (error) {
+      setErrors(prev => ({ ...prev, email: error }))
+    }
+  }
+
+  const handlePasswordBlur = () => {
+    if (!password) return // Don't validate empty fields on blur
+    
+    const error = validatePassword(password)
+    setFieldStates(prev => ({
+      ...prev,
+      password: { hasError: !!error, wasTouched: true, isValid: !error }
+    }))
+    
+    if (error) {
+      setErrors(prev => ({ ...prev, password: error }))
+    }
+  }
+
+  const handleConfirmPasswordBlur = () => {
+    if (!confirmPassword) return // Don't validate empty fields on blur
+    
+    const error = validateConfirmPassword(confirmPassword, password)
+    setFieldStates(prev => ({
+      ...prev,
+      confirmPassword: { hasError: !!error, wasTouched: true, isValid: !error }
+    }))
+    
+    if (error) {
+      setErrors(prev => ({ ...prev, confirmPassword: error }))
+    }
+  }
+
+  // Final validation on submit
+  const validateOnSubmit = () => {
     const newErrors: {email?: string, password?: string, confirmPassword?: string} = {}
     
-    // Validation email
-    if (!email) {
-      newErrors.email = 'L\'email est requis'
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = 'Format d\'email invalide'
-    }
+    const emailError = validateEmail(email)
+    const passwordError = validatePassword(password)
+    const confirmError = validateConfirmPassword(confirmPassword, password)
     
-    // Validation mot de passe
-    if (!password) {
-      newErrors.password = 'Le mot de passe est requis'
-    } else if (password.length < 8) {
-      newErrors.password = 'Le mot de passe doit contenir au moins 8 caractères'
-    } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
-      newErrors.password = 'Le mot de passe doit contenir au moins une majuscule, une minuscule et un chiffre'
-    }
-    
-    // Validation confirmation
-    if (!confirmPassword) {
-      newErrors.confirmPassword = 'La confirmation est requise'
-    } else if (password !== confirmPassword) {
-      newErrors.confirmPassword = 'Les mots de passe ne correspondent pas'
-    }
+    if (emailError) newErrors.email = emailError
+    if (passwordError) newErrors.password = passwordError
+    if (confirmError) newErrors.confirmPassword = confirmError
     
     setErrors(newErrors)
+    
+    // Update field states
+    setFieldStates({
+      email: { hasError: !!emailError, wasTouched: true, isValid: !emailError },
+      password: { hasError: !!passwordError, wasTouched: true, isValid: !passwordError },
+      confirmPassword: { hasError: !!confirmError, wasTouched: true, isValid: !confirmError }
+    })
+    
     return Object.keys(newErrors).length === 0
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!validateForm()) {
+    if (!validateOnSubmit()) {
       toast.error('Veuillez corriger les erreurs du formulaire')
       return
     }
@@ -98,6 +259,12 @@ export default function RegisterForm() {
   const strengthColors = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-blue-500', 'bg-green-500']
   const strengthLabels = ['Très faible', 'Faible', 'Moyen', 'Fort', 'Très fort']
 
+  // Check if form is valid for submit button
+  const isFormValid = fieldStates.email.isValid && 
+                     fieldStates.password.isValid && 
+                     fieldStates.confirmPassword.isValid &&
+                     email && password && confirmPassword
+
   return (
     <form onSubmit={handleSubmit} className="w-full max-w-md space-y-6">
       {/* Email Field */}
@@ -118,15 +285,15 @@ export default function RegisterForm() {
             type="email"
             autoComplete="email"
             value={email}
-            onChange={(e) => {
-              setEmail(e.target.value)
-              if (errors.email) setErrors({...errors, email: undefined})
-            }}
+            onChange={(e) => handleEmailChange(e.target.value)}
+            onBlur={handleEmailBlur}
             className={`
               w-full pl-10 pr-3 py-3 rounded-lg bg-gray-800 border text-white placeholder-gray-400
               focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors
               ${errors.email 
                 ? 'border-red-500 focus:ring-red-500' 
+                : fieldStates.email.isValid && email
+                ? 'border-green-500 focus:ring-green-500'
                 : 'border-gray-600 hover:border-gray-500'
               }
             `}
@@ -134,6 +301,11 @@ export default function RegisterForm() {
             aria-describedby={errors.email ? "register-email-error" : undefined}
             aria-invalid={errors.email ? "true" : "false"}
           />
+          {fieldStates.email.isValid && email && (
+            <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+              <span className="text-green-400">✓</span>
+            </div>
+          )}
         </div>
         {errors.email && (
           <p id="register-email-error" role="alert" className="text-sm text-red-400 flex items-center">
@@ -161,15 +333,15 @@ export default function RegisterForm() {
             type={showPassword ? 'text' : 'password'}
             autoComplete="new-password"
             value={password}
-            onChange={(e) => {
-              setPassword(e.target.value)
-              if (errors.password) setErrors({...errors, password: undefined})
-            }}
+            onChange={(e) => handlePasswordChange(e.target.value)}
+            onBlur={handlePasswordBlur}
             className={`
               w-full pl-10 pr-12 py-3 rounded-lg bg-gray-800 border text-white placeholder-gray-400
               focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors
               ${errors.password 
                 ? 'border-red-500 focus:ring-red-500' 
+                : fieldStates.password.isValid && password
+                ? 'border-green-500 focus:ring-green-500'
                 : 'border-gray-600 hover:border-gray-500'
               }
             `}
@@ -191,8 +363,8 @@ export default function RegisterForm() {
           </button>
         </div>
         
-        {/* Password Strength Indicator */}
-        {password && (
+        {/* Password Strength Indicator - Only show when typing */}
+        {password && !fieldStates.password.hasError && (
           <div className="space-y-2">
             <div className="flex space-x-1">
               {[...Array(5)].map((_, i) => (
@@ -219,7 +391,7 @@ export default function RegisterForm() {
           </p>
         )}
         
-        {!errors.password && (
+        {!errors.password && !password && (
           <p id="password-help" className="text-xs text-gray-400">
             Au moins 8 caractères avec majuscule, minuscule et chiffre
           </p>
@@ -244,16 +416,14 @@ export default function RegisterForm() {
             type={showConfirmPassword ? 'text' : 'password'}
             autoComplete="new-password"
             value={confirmPassword}
-            onChange={(e) => {
-              setConfirmPassword(e.target.value)
-              if (errors.confirmPassword) setErrors({...errors, confirmPassword: undefined})
-            }}
+            onChange={(e) => handleConfirmPasswordChange(e.target.value)}
+            onBlur={handleConfirmPasswordBlur}
             className={`
               w-full pl-10 pr-12 py-3 rounded-lg bg-gray-800 border text-white placeholder-gray-400
               focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors
               ${errors.confirmPassword 
-                ? 'border-red-500 focus:ring-red-500' 
-                : confirmPassword && password === confirmPassword
+                ? 'border-red-500 focus:ring-red-500'
+                : fieldStates.confirmPassword.isValid && confirmPassword
                 ? 'border-green-500 focus:ring-green-500'
                 : 'border-gray-600 hover:border-gray-500'
               }
@@ -274,8 +444,13 @@ export default function RegisterForm() {
               <EyeIcon className="h-5 w-5" aria-hidden="true" />
             )}
           </button>
+          {fieldStates.confirmPassword.isValid && confirmPassword && (
+            <div className="absolute inset-y-0 right-12 pr-3 flex items-center">
+              <span className="text-green-400">✓</span>
+            </div>
+          )}
         </div>
-        {confirmPassword && password === confirmPassword && (
+        {fieldStates.confirmPassword.isValid && confirmPassword && !errors.confirmPassword && (
           <p className="text-sm text-green-400 flex items-center">
             <span className="mr-1">✅</span>
             Les mots de passe correspondent
@@ -327,7 +502,7 @@ export default function RegisterForm() {
       {/* Submit Button */}
       <Button 
         type="submit" 
-        disabled={loading || !email || !password || !confirmPassword || Object.keys(errors).length > 0}
+        disabled={loading || !isFormValid}
         className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
       >
         {loading ? (
