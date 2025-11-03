@@ -1,7 +1,7 @@
 // src/components/layout/Header.tsx
 'use client'
 
-import { Menu, Search, User } from 'lucide-react'
+import {  Menu, Search, LogOut } from 'lucide-react'
 import Button from '@/components/ui/Button'
 import Link from 'next/link'
 import { useAuth } from '@/hooks/useAuth'
@@ -61,22 +61,19 @@ export default function Header({ onToggleSidebar, sidebarCollapsed }: HeaderProp
         </div>
 
         <div className="ml-4 flex items-center space-x-3 text-sm text-gray-200">
-          {user ? (
+         
             <>
               <div className="text-right">
                 <div className="font-medium text-white">{user.email}</div>
                 <div className="text-xs text-gray-400">{getRoleLabel(role)}</div>
               </div>
               <Button variant="ghost" size="icon" onClick={() => logout()} aria-label="Se déconnecter">
-                <User className="h-5 w-5" />
+               {/* icon desconnexion de lucide */}
+                <LogOut className="h-5 w-5" />
+
               </Button>
             </>
-          ) : (
-            <div className="flex items-center space-x-2">
-              <Link href="/login" className="text-sm text-gray-300 hover:underline">Se connecter</Link>
-              <Link href="/register" className="text-sm text-gray-300 hover:underline">S'inscrire</Link>
-            </div>
-          )}
+         
         </div>
       </div>
     </header>

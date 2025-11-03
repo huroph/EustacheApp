@@ -1,41 +1,87 @@
 // src/lib/services/storage.ts
 import { supabase } from '@/lib/supabase'
+import { EncryptionService } from './encryption'
 
 export class StorageService {
   /**
-   * Upload un fichier PDF vers Supabase Storage
+   * Upload un fichier PDF chiffré vers Supabase Storage
    */
   static async uploadScriptPDF(file: File, projectId: string): Promise<string> {
     // Récupérer l'utilisateur actuel
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('Utilisateur non connecté')
 
-    const fileExt = file.name.split('.').pop()
-    const fileName = `${user.id}/${projectId}-script.${fileExt}`
+    // Chiffrer le fichier
+    console.log('Chiffrement du fichier PDF...')
+    const encryptedBuffer = await EncryptionService.encryptFile(file, user.id)
+    
+    const fileName = `${user.id}/${projectId}-script.encrypted`
 
-    // Upload vers le bucket 'scripts'
+    // Upload du fichier chiffré vers le bucket 'scripts'
     const { data, error } = await supabase.storage
       .from('scripts')
-      .upload(fileName, file, {
+      .upload(fileName, encryptedBuffer, {
         cacheControl: '3600',
-        upsert: true // Remplace le fichier existant
+        upsert: true,
+        contentType: 'application/octet-stream' // Type générique pour fichier chiffré
       })
 
     if (error) {
-      console.error('Erreur upload script:', error)
+      console.error('Erreur upload script chiffré:', error)
       throw new Error(`Erreur lors de l'upload du script: ${error.message}`)
     }
 
-    // Récupérer l'URL publique
+    // Récupérer l'URL publique (fichier chiffré, donc sécurisé)
     const { data: urlData } = supabase.storage
       .from('scripts')
       .getPublicUrl(fileName)
 
+    console.log('✓ Fichier PDF chiffre et uploade')
     return urlData.publicUrl
   }
 
   /**
-   * Supprimer un script PDF
+   * Télécharge et déchiffre un script PDF
+   */
+  static async downloadAndDecryptScript(scriptUrl: string): Promise<string> {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Utilisateur non connecté')
+
+    try {
+      console.log('Telechargement du fichier chiffre...')
+      
+      // Télécharger le fichier chiffré
+      const response = await fetch(scriptUrl)
+      if (!response.ok) {
+        throw new Error('Impossible de télécharger le fichier')
+      }
+      
+      const encryptedBuffer = await response.arrayBuffer()
+      
+      console.log('Dechiffrement du fichier...')
+      
+      // Créer une URL blob temporaire pour le PDF déchiffré
+      const decryptedUrl = await EncryptionService.createDecryptedBlobUrl(encryptedBuffer, user.id)
+      
+      console.log('✓ Fichier dechiffre et pret a l\'affichage')
+      return decryptedUrl
+    } catch (error) {
+      console.error('Erreur lors du déchiffrement:', error)
+      throw new Error('Impossible de déchiffrer le fichier. Accès non autorisé.')
+    }
+  }
+
+  /**
+   * Nettoie une URL blob temporaire
+   */
+  static cleanupBlobUrl(url: string): void {
+    if (url.startsWith('blob:')) {
+      EncryptionService.revokeObjectUrl(url)
+    }
+  }
+
+  /**
+   * Supprimer un script PDF chiffré
    */
   static async deleteScriptPDF(scriptUrl: string): Promise<void> {
     // Extraire le path depuis l'URL
