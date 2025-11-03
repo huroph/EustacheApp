@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { useCurrentProject } from '@/lib/currentProject-supabase'
 import { useSequences } from '@/hooks/useSequences'
+import { useSequenceData } from '@/hooks/useSequenceData'
 import { SequencesService } from '@/lib/services/sequences'
 import SequenceCard from '@/components/sequences/SequenceCard'
 import EquipeRolesSection from '@/components/sequences/EquipeRolesSection'
@@ -19,6 +20,9 @@ export default function SequencesPage() {
   const { project, isLoading: projectLoading } = useCurrentProject()
   const { sequences, isLoading: sequencesLoading, error, refetch } = useSequences(project?.id)
   const [selectedSequence, setSelectedSequence] = useState<any>(null)
+  
+  // Hook pour récupérer toutes les données de la séquence sélectionnée
+  const sequenceData = useSequenceData(selectedSequence?.id)
 
   useEffect(() => {
     if (!projectLoading && !project) {
@@ -246,10 +250,16 @@ export default function SequencesPage() {
                   </CollapsibleSection>
 
                   {/* Section 2: Équipe et Rôles */}
-                  <EquipeRolesSection selectedSequence={selectedSequence} />
+                  <EquipeRolesSection 
+                    selectedSequence={selectedSequence} 
+                    sequenceData={sequenceData}
+                  />
 
                   {/* Section 3: Breakdown Technique */}
-                  <BreakdownTechniqueSection selectedSequence={selectedSequence} />
+                  <BreakdownTechniqueSection 
+                    selectedSequence={selectedSequence}
+                    sequenceData={sequenceData}
+                  />
                 </div>
               </div>
             ) : (
