@@ -39,7 +39,7 @@ export class SequencesService {
   }
 
   /**
-   * Récupérer les séquences d'un projet
+   * Récupérer les séquences d'un projet ordonnées par numéro
    */
   static async getByProject(projectId: string): Promise<Sequence[]> {
     const { data, error } = await supabase
@@ -54,6 +54,54 @@ export class SequencesService {
     }
 
     return data || []
+  }
+
+  /**
+   * Générer le prochain numéro de séquence pour un projet
+   */
+  static async getNextSequenceNumber(projectId: string): Promise<number> {
+    const sequences = await this.getByProject(projectId)
+    
+    // Extraire les numéros existants (SEQ-1 → 1, SEQ-2 → 2, etc.)
+    const existingNumbers = sequences
+      .map(seq => {
+        const match = seq.code.match(/SEQ-(\d+)/)
+        return match ? parseInt(match[1], 10) : 0
+      })
+      .filter(num => num > 0)
+      .sort((a, b) => a - b)
+
+    // Trouver le premier numéro disponible (commencer à 1)
+    let nextNumber = 1
+    for (const num of existingNumbers) {
+      if (num === nextNumber) {
+        nextNumber++
+      } else {
+        break
+      }
+    }
+
+    return nextNumber
+  }
+
+  /**
+   * Renuméroter toutes les séquences d'un projet après suppression
+   */
+  static async renumberSequences(projectId: string): Promise<void> {
+    const sequences = await this.getByProject(projectId)
+    
+    // Trier par date de création pour garder l'ordre logique
+    const sortedSequences = sequences.sort((a, b) => 
+      new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    )
+
+    // Renuméroter séquentiellement
+    for (let i = 0; i < sortedSequences.length; i++) {
+      const newCode = `SEQ-${i + 1}`
+      if (sortedSequences[i].code !== newCode) {
+        await this.update(sortedSequences[i].id, { code: newCode })
+      }
+    }
   }
 
   /**
@@ -81,12 +129,23 @@ export class SequencesService {
   }
 
   /**
-   * Créer une nouvelle séquence
+   * Créer une nouvelle séquence avec numérotation automatique
    */
-  static async create(sequence: SequenceInsert): Promise<Sequence> {
+  static async create(sequence: Omit<SequenceInsert, 'code'>): Promise<Sequence> {
+    // Générer automatiquement le code de séquence
+    const nextNumber = await this.getNextSequenceNumber(sequence.project_id)
+    const sequenceCode = `SEQ-${nextNumber}`
+
+    const sequenceWithCode: SequenceInsert = {
+      ...sequence,
+      code: sequenceCode
+    }
+
+    console.log(`Création séquence ${sequenceCode} pour projet ${sequence.project_id}`)
+
     const { data, error } = await supabase
       .from('sequences')
-      .insert([sequence])
+      .insert([sequenceWithCode])
       .select()
       .single()
 
@@ -118,9 +177,20 @@ export class SequencesService {
   }
 
   /**
-   * Supprimer une séquence
+   * Supprimer une séquence et renuméroter les séquences restantes
    */
   static async delete(id: string): Promise<void> {
+    console.log(`Suppression de la séquence ${id}`)
+
+    // Récupérer la séquence pour connaître le project_id
+    const sequence = await this.getById(id)
+    if (!sequence) {
+      throw new Error('Séquence non trouvée')
+    }
+
+    const projectId = sequence.project_id
+
+    // Supprimer la séquence
     const { error } = await supabase
       .from('sequences')
       .delete()
@@ -130,6 +200,13 @@ export class SequencesService {
       console.error('Erreur lors de la suppression de la séquence:', error)
       throw new Error(`Erreur lors de la suppression de la séquence: ${error.message}`)
     }
+
+    console.log(`Séquence ${sequence.code} supprimée, renumérotation en cours...`)
+
+    // Renuméroter toutes les séquences restantes du projet
+    await this.renumberSequences(projectId)
+
+    console.log('Renumérotation terminée')
   }
 
   /**
@@ -183,6 +260,14 @@ export class SequencesService {
   }
 
   /**
+   * Vérifier qu'une séquence appartient à un projet spécifique
+   */
+  static async verifySequenceProject(sequenceId: string, expectedProjectId: string): Promise<boolean> {
+    const sequence = await this.getById(sequenceId)
+    return sequence?.project_id === expectedProjectId
+  }
+
+  /**
    * Obtenir les statistiques d'une séquence
    */
   static async getStats(sequenceId: string): Promise<{
@@ -202,4 +287,5 @@ export class SequencesService {
 }
 
 // Types exportés pour utilisation dans les composants
-export type { Sequence, SequenceInsert, SequenceUpdate, SequenceWithProject }
+export type { Sequence, SequenceUpdate, SequenceWithProject }
+export type SequenceCreateInput = Omit<SequenceInsert, 'code'>

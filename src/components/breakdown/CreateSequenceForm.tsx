@@ -75,67 +75,35 @@ export default function CreateSequenceForm({ onCancel, editMode = false, sequenc
         })
 
         try {
-          // Forcer le rechargement des séquences depuis la base pour avoir les données à jour
-          console.log('🔄 Rechargement des séquences depuis la base...')
-          const { SequencesService } = await import('@/lib/services/sequences')
-          const currentSequences = await SequencesService.getByProject(project.id)
+          setIsCreating(true)
           
-          // Générer le prochain code de séquence disponible
-          const generateNextSequenceCode = () => {
-            console.log('📊 Séquences actuelles pour génération code:', currentSequences.map(s => ({ id: s.id, code: s.code, title: s.title })))
-            
-            if (currentSequences.length === 0) {
-              console.log('🎯 Aucune séquence, génération SEQ-1')
-              return 'SEQ-1'
-            }
-            
-            // Extraire les numéros existants et trouver le max
-            const existingNumbers = currentSequences
-              .map(seq => {
-                const match = seq.code?.match(/SEQ-(\d+)/)
-                const num = match?.[1]
-                console.log(`📝 Séquence ${seq.code} → ${num}`)
-                return num
-              })
-              .filter(num => num !== undefined)
-              .map(num => parseInt(num as string, 10))
-            
-            console.log('🔢 Numéros extraits:', existingNumbers)
-            const maxNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) : 0
-            const nextCode = `SEQ-${maxNumber + 1}`
-            console.log('🎯 Prochain code généré:', nextCode)
-            return nextCode
-          }
-
-          const sequenceCode = generateNextSequenceCode()
+          console.log('🎬 Création d\'une nouvelle séquence avec numérotation automatique...')
 
           const newSequence = await createSequence({
             project_id: project.id,
-            title: `Séquence ${sequenceCode.replace('SEQ-', '')}`,
+            title: 'Nouvelle séquence',
             color_id: 'blue',
             status: 'En attente',
           })
           
-          if (newSequence && updateSequence) {
-            // Mettre à jour avec le code généré
-            await updateSequence(newSequence.id, {
-              code: sequenceCode
-            })
-            
+          if (newSequence) {
             setCreatedSequenceId(newSequence.id)
             
             // Synchroniser le formData avec la séquence créée
             setFormData(prev => ({
               ...prev,
-              code: sequenceCode,
-              title: `Séquence ${sequenceCode.replace('SEQ-', '')}`
+              code: newSequence.code, // Code automatiquement généré
+              title: newSequence.title,
+              status: newSequence.status,
+              color_id: newSequence.color_id
             }))
             
-            console.log('✅ Séquence vide créée:', sequenceCode, newSequence.id)
+            console.log(`✅ Séquence ${newSequence.code} créée avec ID: ${newSequence.id}`)
           }
         } catch (error) {
-          console.error('❌ Erreur création séquence vide:', error)
-          setIsCreating(false) // Débloquer en cas d'erreur
+          console.error('❌ Erreur lors de la création de la séquence:', error)
+        } finally {
+          setIsCreating(false)
         }
       }
     }

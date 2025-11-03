@@ -4,7 +4,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { SequencesService, type Sequence, type SequenceWithProject } from '@/lib/services/sequences'
+import { SequencesService, type Sequence, type SequenceWithProject, type SequenceCreateInput } from '@/lib/services/sequences'
 
 export function useSequences(projectId?: string) {
   const [sequences, setSequences] = useState<Sequence[]>([])
@@ -38,21 +38,19 @@ export function useSequences(projectId?: string) {
     loadSequences()
   }, [projectId]) // Ne se déclenche que si projectId change réellement
 
-  const createSequence = async (sequenceData: {
-    title: string
-    project_id: string
-    color_id?: string
-    status?: 'A validé' | 'En attente' | 'Validé'
-    location?: string
-    summary?: string
-    pre_montage?: string
-    ett?: string
-    time_of_day?: 'JOUR' | 'NUIT'
-    location_type?: 'INT' | 'EXT'
-  }) => {
+  const createSequence = async (sequenceData: SequenceCreateInput) => {
+    // Vérifier que project_id correspond au projectId du hook
+    if (sequenceData.project_id !== projectId) {
+      throw new Error('ID du projet non valide')
+    }
+
     try {
+      console.log(`Création d'une nouvelle séquence pour le projet ${projectId}`)
       const newSequence = await SequencesService.create(sequenceData)
-      setSequences(prev => [newSequence, ...prev])
+      
+      // Recharger toutes les séquences pour avoir la numérotation à jour
+      await loadSequences()
+      
       return newSequence
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors de la création')
@@ -77,8 +75,21 @@ export function useSequences(projectId?: string) {
 
   const deleteSequence = async (id: string) => {
     try {
+      // Vérifier que la séquence appartient bien au projet
+      if (projectId) {
+        const isValid = await SequencesService.verifySequenceProject(id, projectId)
+        if (!isValid) {
+          throw new Error('Cette séquence n\'appartient pas au projet courant')
+        }
+      }
+
+      console.log(`Suppression de la séquence ${id} et renumérotation automatique`)
       await SequencesService.delete(id)
-      setSequences(prev => prev.filter(sequence => sequence.id !== id))
+      
+      // Recharger toutes les séquences pour avoir la nouvelle numérotation
+      await loadSequences()
+      
+      console.log('Séquences renumérotées et rechargées')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors de la suppression')
       throw err
