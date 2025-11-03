@@ -8,6 +8,7 @@ import { useCurrentProject } from '@/lib/currentProject-supabase'
 import { useSequences } from '@/hooks/useSequences'
 import { useSequenceData } from '@/hooks/useSequenceData'
 import { SequencesService } from '@/lib/services/sequences'
+import { seedCompleteSequence } from '@/utils/seed-complete-sequence'
 import SequenceCard from '@/components/sequences/SequenceCard'
 import EquipeRolesSection from '@/components/sequences/EquipeRolesSection'
 import BreakdownTechniqueSection from '@/components/sequences/BreakdownTechniqueSection'
@@ -20,6 +21,7 @@ export default function SequencesPage() {
   const { project, isLoading: projectLoading } = useCurrentProject()
   const { sequences, isLoading: sequencesLoading, error, refetch } = useSequences(project?.id)
   const [selectedSequence, setSelectedSequence] = useState<any>(null)
+  const [seedLoading, setSeedLoading] = useState(false)
   
   // Hook pour récupérer toutes les données de la séquence sélectionnée
   const sequenceData = useSequenceData(selectedSequence?.id)
@@ -73,6 +75,32 @@ export default function SequencesPage() {
     router.push('/breakdown')
   }
 
+  const handleCreateTestData = async () => {
+    if (!project?.id) {
+      toast.error('Aucun projet sélectionné')
+      return
+    }
+
+    setSeedLoading(true)
+    const loadingToast = toast.loading('Création des données de test...')
+    
+    try {
+      await seedCompleteSequence(project.id)
+      toast.success('Données de test créées avec succès !', {
+        id: loadingToast,
+      })
+      // Recharger les séquences après la création
+      await refetch()
+    } catch (error: any) {
+      console.error('Erreur lors de la création des données de test:', error)
+      toast.error(`Erreur: ${error.message}`, {
+        id: loadingToast,
+      })
+    } finally {
+      setSeedLoading(false)
+    }
+  }
+
   if (projectLoading || sequencesLoading) {
     return (
       <div className="min-h-screen bg-gray-900 p-6 flex items-center justify-center">
@@ -118,6 +146,15 @@ export default function SequencesPage() {
                 >
                   ↻
                 </button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleCreateTestData}
+                  disabled={seedLoading}
+                  className="text-xs"
+                >
+                  {seedLoading ? '...' : '🎬 Test'}
+                </Button>
                 <select className="bg-gray-800 text-white text-sm rounded px-3 py-1 border border-gray-600">
                   <option>All</option>
                   <option>EXT</option>
