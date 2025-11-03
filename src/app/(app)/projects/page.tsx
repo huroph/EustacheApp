@@ -1,17 +1,26 @@
 // src/app/(app)/projects/page.tsx
 'use client'
 
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { useProjects } from '@/hooks/useProjects'
 import { useCurrentProject } from '@/lib/currentProject-supabase'
-import Badge from '@/components/ui/Badge'
+import { Project } from '@/lib/services/projects'
+import ProjectCard from '@/components/projects/ProjectCard'
+import ProjectForm, { ProjectFormData } from '@/components/projects/ProjectForm'
+import Button from '@/components/ui/Button'
 import { seedProjects, clearProjects } from '@/utils/seed-projects'
 
 export default function ProjectsPage() {
   const router = useRouter()
-  const { projects, isLoading, error, refetch } = useProjects()
+  const { projects, isLoading, error, refetch, createProject, updateProject, deleteProject } = useProjects()
   const { setProjectId } = useCurrentProject()
+  
+  // États pour la gestion des modales
+  const [showForm, setShowForm] = useState(false)
+  const [editingProject, setEditingProject] = useState<Project | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSeedProjects = async () => {
     const loadingToast = toast.loading('Création des projets d\'exemple...')
@@ -82,6 +91,72 @@ export default function ProjectsPage() {
     }
   }
 
+  const handleCreateProject = () => {
+    setEditingProject(null)
+    setShowForm(true)
+  }
+
+  const handleEditProject = (project: Project) => {
+    setEditingProject(project)
+    setShowForm(true)
+  }
+
+  const handleDeleteProject = async (projectId: string) => {
+    const project = projects.find(p => p.id === projectId)
+    if (!project) return
+
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer le projet "${project.title}" ?`)) {
+      return
+    }
+
+    const loadingToast = toast.loading('Suppression du projet...')
+    
+    try {
+      await deleteProject(projectId)
+      toast.success(`Projet "${project.title}" supprimé avec succès`, {
+        id: loadingToast,
+      })
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error)
+      toast.error('Erreur lors de la suppression du projet', {
+        id: loadingToast,
+      })
+    }
+  }
+
+  const handleFormSubmit = async (data: ProjectFormData) => {
+    setIsSubmitting(true)
+    const loadingToast = toast.loading(editingProject ? 'Modification...' : 'Création...')
+
+    try {
+      if (editingProject) {
+        await updateProject(editingProject.id, data)
+        toast.success('Projet modifié avec succès', {
+          id: loadingToast,
+        })
+      } else {
+        await createProject(data)
+        toast.success('Projet créé avec succès', {
+          id: loadingToast,
+        })
+      }
+      setShowForm(false)
+      setEditingProject(null)
+    } catch (error) {
+      console.error('Erreur lors de la soumission:', error)
+      toast.error('Erreur lors de la sauvegarde', {
+        id: loadingToast,
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleFormCancel = () => {
+    setShowForm(false)
+    setEditingProject(null)
+  }
+
   const formatDateRange = (startDate: string | null, endDate: string | null) => {
     if (!startDate || !endDate) return 'Dates non définies'
     
@@ -95,6 +170,22 @@ export default function ProjectsPage() {
       year: 'numeric'
     })
     return `${start} → ${end}`
+  }
+
+  // Si on affiche le formulaire
+  if (showForm) {
+    return (
+      <div className="h-full bg-gray-900 p-6 flex items-center justify-center">
+        <div className="w-full max-w-2xl">
+          <ProjectForm
+            project={editingProject}
+            onSubmit={handleFormSubmit}
+            onCancel={handleFormCancel}
+            isLoading={isSubmitting}
+          />
+        </div>
+      </div>
+    )
   }
 
   if (isLoading) {
@@ -136,13 +227,19 @@ export default function ProjectsPage() {
               <p className="text-gray-400">Sélectionnez un projet pour commencer</p>
             </div>
             
-            {/* Boutons de test (temporaires) */}
+            {/* Boutons de gestion */}
             <div className="flex space-x-2">
+              <Button
+                onClick={handleCreateProject}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                + Nouveau projet
+              </Button>
               <button
                 onClick={handleSeedProjects}
                 className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm"
               >
-                + Ajouter projets test
+                + Projets test
               </button>
               <button
                 onClick={handleClearProjects}
@@ -163,10 +260,10 @@ export default function ProjectsPage() {
                 Commencez par ajouter des projets de test ou créez votre premier projet
               </div>
               <button
-                onClick={handleSeedProjects}
+                onClick={handleCreateProject}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded"
               >
-                Ajouter des projets de test
+                Créer votre premier projet
               </button>
             </div>
           ) : (
@@ -175,47 +272,15 @@ export default function ProjectsPage() {
                 <h2 className="text-xl font-semibold text-white mb-4">{year}</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {projectsByYear[year].map(project => (
-                  <div
-                    key={project.id}
-                    onClick={() => handleProjectClick(project.id)}
-                    className="bg-gray-800 rounded-lg border border-gray-700 p-6 cursor-pointer hover:bg-gray-750 transition-colors"
-                  >
-                    {/* Image placeholder */}
-                    <div className="w-full h-32 bg-gray-700 rounded-md mb-4 flex items-center justify-center">
-                      <span className="text-gray-500">Image du projet</span>
-                    </div>
-
-                    {/* Contenu */}
-                    <div className="space-y-3">
-                      <h3 className="text-white font-semibold text-lg">{project.title}</h3>
-                      
-                      <div className="flex items-center space-x-2">
-                        <span className="text-gray-400 text-sm">{project.script_file || 'Aucun script'}</span>
-                      </div>
-
-                      <div className="text-gray-400 text-sm">
-                        {formatDateRange(project.start_date, project.end_date)}
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <span 
-                          className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-semibold text-white ${
-                            project.status === 'En cours' ? 'bg-green-600' :
-                            project.status === 'Terminé' ? 'bg-blue-600' :
-                            project.status === 'Archivé' ? 'bg-gray-600' :
-                            'bg-orange-600'
-                          }`}
-                        >
-                          {project.status}
-                        </span>
-                        <span className="text-gray-400 text-sm">
-                          {project.code}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                    <ProjectCard
+                      key={project.id}
+                      project={project}
+                      onSelect={handleProjectClick}
+                      onEdit={handleEditProject}
+                      onDelete={handleDeleteProject}
+                    />
+                  ))}
+                </div>
             </div>
           ))
           )}
