@@ -5,11 +5,13 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { RegisterForm } from '@/components/auth/RegisterForm'
 import { AuthProvider, useAuth } from '@/hooks/useAuth'
+import { useGlobalStats } from '@/hooks/useGlobalStats'
 import Link from 'next/link'
 import { Toaster } from 'react-hot-toast'
 
 function RegisterPageContent() {
   const { user, loading } = useAuth()
+  const { formattedStats, isLoading: statsLoading } = useGlobalStats()
   const router = useRouter()
 
   useEffect(() => {
@@ -88,11 +90,15 @@ function RegisterPageContent() {
           {/* Stats */}
           <div className="flex items-center space-x-6 text-sm text-gray-400">
             <div className="flex items-center">
-              <span className="text-blue-400 font-bold mr-1">500+</span>
+              <span className="text-blue-400 font-bold mr-1">
+                {statsLoading ? '...' : formattedStats.usersDisplay}
+              </span>
               <span>Réalisateurs</span>
             </div>
             <div className="flex items-center">
-              <span className="text-blue-400 font-bold mr-1">1000+</span>
+              <span className="text-blue-400 font-bold mr-1">
+                {statsLoading ? '...' : formattedStats.projectsDisplay}
+              </span>
               <span>Projets créés</span>
             </div>
           </div>
