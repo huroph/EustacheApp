@@ -77,7 +77,6 @@ export default function CreateSequenceForm({ onCancel, editMode = false, sequenc
         try {
           setIsCreating(true)
           
-          console.log('🎬 Création d\'une nouvelle séquence avec numérotation automatique...')
 
           const newSequence = await createSequence({
             project_id: project.id,
@@ -98,10 +97,10 @@ export default function CreateSequenceForm({ onCancel, editMode = false, sequenc
               color_id: newSequence.color_id
             }))
             
-            console.log(`✅ Séquence ${newSequence.code} créée avec ID: ${newSequence.id}`)
+            toast.success(`Séquence ${newSequence.code} créée et prête à être configurée`)
           }
         } catch (error) {
-          console.error('❌ Erreur lors de la création de la séquence:', error)
+          toast.error('Erreur lors de la création de la séquence initiale')
         } finally {
           setIsCreating(false)
         }
@@ -141,9 +140,9 @@ export default function CreateSequenceForm({ onCancel, editMode = false, sequenc
       try {
         // Utiliser le hook pour supprimer la séquence vide
         await deleteSequence(createdSequenceId)
-        console.log('🗑️ Séquence vide supprimée:', createdSequenceId)
+        toast('Brouillon de séquence supprimé', { icon: '🗑️' })
       } catch (error) {
-        console.error('❌ Erreur suppression séquence vide:', error)
+        toast.error('Erreur lors de la suppression du brouillon')
       }
     }
     
@@ -153,16 +152,7 @@ export default function CreateSequenceForm({ onCancel, editMode = false, sequenc
 
   // Debug: afficher l'état actuel
   const currentSequence = sessionStore.getCurrentSequence()
-  console.log('État actuel du stepper:', {
-    currentStep,
-    currentSequence: currentSequence ? {
-      id: currentSequence.id,
-      title: currentSequence.title,
-      decorsCount: sessionStore.getDecors(currentSequence.id).length,
-      scenesCount: sessionStore.getScenes(currentSequence.id).length
-    } : 'Aucune séquence courante',
-    formData
-  })
+  // Removing console.log for cleaner code - state tracking via toast notifications instead
 
   const goNext = () => {
     if (currentIndex < STEPS.length - 1) {
@@ -184,6 +174,8 @@ export default function CreateSequenceForm({ onCancel, editMode = false, sequenc
   const debugSequence = () => {
     const allSequences = sessionStore.getSequences()
     const current = sessionStore.getCurrentSequence()
+    toast('Debug: État des séquences vérifié dans la console', { icon: '🔍' })
+    // Log détaillé conservé pour le développement
     console.log('=== DEBUG SEQUENCE ===')
     console.log('Toutes les séquences:', allSequences)
     console.log('Séquence courante:', current)
@@ -217,7 +209,6 @@ export default function CreateSequenceForm({ onCancel, editMode = false, sequenc
             id: loadingToast,
           })
           setShowSuccess(true)
-          console.log('Séquence mise à jour:', updatedSequence)
           
           setTimeout(() => {
             setShowSuccess(false)
@@ -244,7 +235,6 @@ export default function CreateSequenceForm({ onCancel, editMode = false, sequenc
             id: loadingToast,
           })
           setShowSuccess(true)
-          console.log('✅ Séquence finalisée (mise à jour de la séquence vide):', updatedSequence)
           
           setTimeout(() => {
             setShowSuccess(false)
@@ -255,10 +245,8 @@ export default function CreateSequenceForm({ onCancel, editMode = false, sequenc
         toast.error('Erreur : aucune séquence à finaliser', {
           id: loadingToast,
         })
-        console.error('❌ Aucune séquence créée à finaliser')
       }
     } catch (error) {
-      console.error('Erreur lors de la sauvegarde de la séquence:', error)
       toast.error('Erreur lors de la sauvegarde de la séquence', {
         id: loadingToast,
       })

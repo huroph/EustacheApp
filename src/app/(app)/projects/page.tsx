@@ -129,21 +129,7 @@ export default function ProjectsPage() {
     setEditingProject(null)
   }
 
-  const handleFixProjects = async () => {
-    const loadingToast = toast.loading('Réparation des codes de projets...')
-    try {
-      await fixProjectCodes()
-      await refetch() // Recharger les projets
-      toast.success('Codes de projets réparés avec succès', {
-        id: loadingToast,
-      })
-    } catch (error) {
-      console.error('Erreur lors de la réparation:', error)
-      toast.error('Erreur lors de la réparation', {
-        id: loadingToast,
-      })
-    }
-  }
+  
 
   const formatDateRange = (startDate: string | null, endDate: string | null) => {
     if (!startDate || !endDate) return 'Dates non définies'
@@ -225,12 +211,7 @@ export default function ProjectsPage() {
               </Button>
               
               {/* Bouton de débogage temporaire */}
-              <Button
-                onClick={handleFixProjects}
-                className="bg-yellow-600 hover:bg-yellow-700 text-xs"
-              >
-                🔧 Réparer codes
-              </Button>
+             
             </div>
           </div>
         </div>
