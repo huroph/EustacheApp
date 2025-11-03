@@ -48,23 +48,33 @@ export default function SequencesPage() {
 
   const handleDeleteSequence = async (sequenceId: string) => {
     const sequence = sequences.find(s => s.id === sequenceId)
-    if (confirm('Supprimer cette séquence ?')) {
+    if (confirm(`Supprimer définitivement la séquence "${sequence?.title}" ?`)) {
       const loadingToast = toast.loading('Suppression de la séquence...')
       try {
+        console.log('🗑️ Suppression de la séquence:', sequenceId, sequence?.title)
+        
+        // Suppression via le service
         await SequencesService.delete(sequenceId)
+        console.log('✅ Séquence supprimée de la base de données')
+        
         toast.success(`Séquence "${sequence?.title}" supprimée avec succès`, {
           id: loadingToast,
         })
-        await refetch() // Recharger immédiatement
+        
+        // Forcer le rechargement complet depuis la base
+        console.log('🔄 Rechargement des séquences...')
+        await refetch()
         
         // Si la séquence supprimée était sélectionnée, réinitialiser la sélection
         if (selectedSequence?.id === sequenceId) {
           const remainingSequences = sequences.filter(s => s.id !== sequenceId)
           setSelectedSequence(remainingSequences.length > 0 ? remainingSequences[0] : null)
         }
+        
+        console.log('✅ Interface mise à jour')
       } catch (error) {
-        console.error('Erreur lors de la suppression:', error)
-        toast.error('Erreur lors de la suppression de la séquence', {
+        console.error('❌ Erreur lors de la suppression:', error)
+        toast.error(`Erreur lors de la suppression: ${error instanceof Error ? error.message : 'Erreur inconnue'}`, {
           id: loadingToast,
         })
       }

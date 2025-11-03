@@ -11,6 +11,7 @@ interface StepFooterProps {
   onNext: () => void
   onSubmit: () => void
   editMode?: boolean  // Nouveau prop pour savoir si on est en mode édition
+  onCancel?: () => void  // Nouvelle prop pour gérer l'annulation à la première étape
 }
 
 export default function StepFooter({ 
@@ -19,7 +20,8 @@ export default function StepFooter({
   onPrev, 
   onNext, 
   onSubmit,
-  editMode = false  // Valeur par défaut
+  editMode = false,  // Valeur par défaut
+  onCancel
 }: StepFooterProps) {
   const isFirst = currentIndex === 0
   const isLast = currentIndex === total - 1
@@ -96,10 +98,10 @@ export default function StepFooter({
               <Button 
                 type="button" 
                 variant="secondary" 
-                onClick={onPrev}
-                disabled={isFirst}
+                onClick={isFirst && onCancel ? onCancel : onPrev}
+                disabled={isFirst && !onCancel}
               >
-                Précédent
+                {isFirst && onCancel ? 'Annuler' : 'Précédent'}
               </Button>
               <span className="text-gray-400 text-sm">
                 {currentIndex + 1} of {total}

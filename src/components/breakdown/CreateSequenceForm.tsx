@@ -40,9 +40,10 @@ interface CreateSequenceFormProps {
 export default function CreateSequenceForm({ onCancel, editMode = false, sequenceId }: CreateSequenceFormProps) {
   const router = useRouter()
   const { project } = useCurrentProject()
-  const { sequences, createSequence, updateSequence } = useSequences(project?.id)
+  const { sequences, createSequence, updateSequence, deleteSequence } = useSequences(project?.id)
   const [currentStep, setCurrentStep] = useState<StepKey>("Général")
   const [createdSequenceId, setCreatedSequenceId] = useState<string | null>(sequenceId || null)
+  const [isCreating, setIsCreating] = useState(false) // Flag pour éviter la création multiple
   const [formData, setFormData] = useState({
     code: '',
     title: '',
@@ -57,41 +58,91 @@ export default function CreateSequenceForm({ onCancel, editMode = false, sequenc
   })
   const [showSuccess, setShowSuccess] = useState(false)
 
-  // Fonction pour créer automatiquement une séquence quand on tape le titre
-  const handleTitleChange = async (newTitle: string) => {
-    const updatedFormData = { ...formData, title: newTitle }
-    setFormData(updatedFormData)
-
-    // Si on n'a pas encore de séquence créée et qu'on a un titre, créer automatiquement
-    if (!createdSequenceId && !editMode && newTitle.trim() && project?.id) {
-      const loadingToast = toast.loading('Création automatique de la séquence...')
-
-      try {
-        const sequenceData = {
-          project_id: project.id,
-          title: newTitle,
-          color_id: formData.colorId,
-          status: formData.status as any,
-        }
+  // ÉTAPE 1: Créer automatiquement une séquence vide à l'ouverture (mode création seulement)
+  useEffect(() => {
+    const createInitialSequence = async () => {
+      // Conditions strictes pour éviter la création multiple
+      if (!editMode && !sequenceId && !createdSequenceId && !isCreating && project?.id) {
+        setIsCreating(true) // Bloquer les créations multiples
         
-        const newSequence = await createSequence(sequenceData)
-        
-        if (newSequence) {
-          setCreatedSequenceId(newSequence.id)
-          toast.success(`Séquence "${newSequence.title}" créée ! Décors et scènes maintenant disponibles.`, {
-            id: loadingToast,
-          })
-        }
-      } catch (error) {
-        console.error('Erreur lors de la création automatique:', error)
-        toast.error('Erreur lors de la création automatique', {
-          id: loadingToast,
+        console.log('🔄 Tentative de création séquence, conditions:', {
+          editMode,
+          sequenceId,
+          createdSequenceId,
+          isCreating,
+          projectId: project.id,
+          sequencesCount: sequences.length
         })
+
+        try {
+          // Forcer le rechargement des séquences depuis la base pour avoir les données à jour
+          console.log('🔄 Rechargement des séquences depuis la base...')
+          const { SequencesService } = await import('@/lib/services/sequences')
+          const currentSequences = await SequencesService.getByProject(project.id)
+          
+          // Générer le prochain code de séquence disponible
+          const generateNextSequenceCode = () => {
+            console.log('📊 Séquences actuelles pour génération code:', currentSequences.map(s => ({ id: s.id, code: s.code, title: s.title })))
+            
+            if (currentSequences.length === 0) {
+              console.log('🎯 Aucune séquence, génération SEQ-1')
+              return 'SEQ-1'
+            }
+            
+            // Extraire les numéros existants et trouver le max
+            const existingNumbers = currentSequences
+              .map(seq => {
+                const match = seq.code?.match(/SEQ-(\d+)/)
+                const num = match?.[1]
+                console.log(`📝 Séquence ${seq.code} → ${num}`)
+                return num
+              })
+              .filter(num => num !== undefined)
+              .map(num => parseInt(num as string, 10))
+            
+            console.log('🔢 Numéros extraits:', existingNumbers)
+            const maxNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) : 0
+            const nextCode = `SEQ-${maxNumber + 1}`
+            console.log('🎯 Prochain code généré:', nextCode)
+            return nextCode
+          }
+
+          const sequenceCode = generateNextSequenceCode()
+
+          const newSequence = await createSequence({
+            project_id: project.id,
+            title: `Séquence ${sequenceCode.replace('SEQ-', '')}`,
+            color_id: 'blue',
+            status: 'En attente',
+          })
+          
+          if (newSequence && updateSequence) {
+            // Mettre à jour avec le code généré
+            await updateSequence(newSequence.id, {
+              code: sequenceCode
+            })
+            
+            setCreatedSequenceId(newSequence.id)
+            
+            // Synchroniser le formData avec la séquence créée
+            setFormData(prev => ({
+              ...prev,
+              code: sequenceCode,
+              title: `Séquence ${sequenceCode.replace('SEQ-', '')}`
+            }))
+            
+            console.log('✅ Séquence vide créée:', sequenceCode, newSequence.id)
+          }
+        } catch (error) {
+          console.error('❌ Erreur création séquence vide:', error)
+          setIsCreating(false) // Débloquer en cas d'erreur
+        }
       }
     }
-  }
 
-  // Charger les données en mode édition
+    createInitialSequence()
+  }, [editMode, sequenceId, project?.id]) // Plus de délai, suppression de sequences des dépendances
+
   // Charger les données en mode édition depuis Supabase
   useEffect(() => {
     if (editMode && sequenceId && sequences.length > 0) {
@@ -114,6 +165,23 @@ export default function CreateSequenceForm({ onCancel, editMode = false, sequenc
   }, [editMode, sequenceId, sequences])
 
   const currentIndex = STEPS.indexOf(currentStep)
+
+  // ÉTAPE 2: Gestion de l'annulation avec suppression de la séquence vide
+  const handleCancel = async () => {
+    // Si on a créé une séquence vide (mode création) et qu'on est à la première étape
+    if (!editMode && createdSequenceId && currentStep === "Général") {
+      try {
+        // Utiliser le hook pour supprimer la séquence vide
+        await deleteSequence(createdSequenceId)
+        console.log('🗑️ Séquence vide supprimée:', createdSequenceId)
+      } catch (error) {
+        console.error('❌ Erreur suppression séquence vide:', error)
+      }
+    }
+    
+    // Appeler la fonction d'annulation parent
+    onCancel()
+  }
 
   // Debug: afficher l'état actuel
   const currentSequence = sessionStore.getCurrentSequence()
@@ -159,7 +227,7 @@ export default function CreateSequenceForm({ onCancel, editMode = false, sequenc
     if (e) e.preventDefault()
     
     const isEditing = editMode && sequenceId
-    const loadingToast = toast.loading(isEditing ? 'Modification de la séquence...' : 'Création de la séquence...')
+    const loadingToast = toast.loading(isEditing ? 'Modification de la séquence...' : 'Finalisation de la séquence...')
     
     try {
       // Mode édition : mettre à jour une séquence existante
@@ -189,10 +257,9 @@ export default function CreateSequenceForm({ onCancel, editMode = false, sequenc
           }, 1000)
         }
       }
-      // Mode création : créer une nouvelle séquence
-      else if (project?.id && createSequence) {
-        const newSequence = await createSequence({
-          project_id: project.id,
+      // Mode création : mettre à jour la séquence vide créée au début
+      else if (createdSequenceId && updateSequence) {
+        const updatedSequence = await updateSequence(createdSequenceId, {
           title: formData.title,
           color_id: formData.colorId,
           status: formData.status as any,
@@ -204,74 +271,23 @@ export default function CreateSequenceForm({ onCancel, editMode = false, sequenc
           location_type: formData.type as any
         })
         
-        if (newSequence) {
-          setCreatedSequenceId(newSequence.id) // Permettre l'accès aux décors/scènes
-          toast.success(`Séquence "${formData.title}" créée avec succès`, {
+        if (updatedSequence) {
+          toast.success(`Séquence "${formData.title}" finalisée avec succès`, {
             id: loadingToast,
           })
           setShowSuccess(true)
-          console.log('Nouvelle séquence créée:', newSequence)
-          
-          setTimeout(() => {
-            setShowSuccess(false)
-            // Ne pas rediriger automatiquement
-          }, 1000)
-        }
-      }
-      // Fallback sur sessionStore si nécessaire
-      else {
-        const currentSequence = sessionStore.getCurrentSequence()
-        
-        if (currentSequence) {
-          const updatedSequence = sessionStore.updateSequence(currentSequence.id, {
-            code: formData.code,
-            title: formData.title,
-            colorId: formData.colorId,
-            status: formData.status as any,
-            location: formData.location,
-            summary: formData.summary,
-            preMintage: formData.preMintage,
-            ett: formData.ett,
-            effet: formData.effet as any,
-            type: formData.type as any
-          })
-          
-          if (updatedSequence) {
-            setShowSuccess(true)
-            const stats = sessionStore.getSequenceStats(updatedSequence.id)
-            console.log('Séquence créée/mise à jour:', {
-              ...updatedSequence,
-              totalDecors: stats.decorsCount,
-              totalScenes: stats.scenesCount
-            })
-            
-            setTimeout(() => {
-              setShowSuccess(false)
-              router.push('/sequences')
-            }, 1000)
-          }
-        } else {
-          const newSequence = sessionStore.createSequence({
-            code: formData.code,
-            title: formData.title,
-            colorId: formData.colorId,
-            status: formData.status as any,
-            location: formData.location,
-            summary: formData.summary,
-            preMintage: formData.preMintage,
-            ett: formData.ett,
-            effet: formData.effet as any,
-            type: formData.type as any
-          })
-          
-          setShowSuccess(true)
-          console.log('Nouvelle séquence créée:', newSequence)
+          console.log('✅ Séquence finalisée (mise à jour de la séquence vide):', updatedSequence)
           
           setTimeout(() => {
             setShowSuccess(false)
             router.push('/sequences')
           }, 1000)
         }
+      } else {
+        toast.error('Erreur : aucune séquence à finaliser', {
+          id: loadingToast,
+        })
+        console.error('❌ Aucune séquence créée à finaliser')
       }
     } catch (error) {
       console.error('Erreur lors de la sauvegarde de la séquence:', error)
@@ -293,7 +309,6 @@ export default function CreateSequenceForm({ onCancel, editMode = false, sequenc
             setFormData={setFormData}
             showSuccess={showSuccess}
             sequenceId={currentSequenceId}
-            onTitleChange={handleTitleChange}
           />
         )
       case "Rôle":
@@ -325,7 +340,7 @@ export default function CreateSequenceForm({ onCancel, editMode = false, sequenc
               current={currentStep}
               steps={STEPS}
               onSelect={goTo}
-              onClose={onCancel}
+              onClose={handleCancel}
             />
           </div>
         </div>
@@ -344,6 +359,7 @@ export default function CreateSequenceForm({ onCancel, editMode = false, sequenc
             onNext={goNext}
             onSubmit={handleSubmit}
             editMode={editMode}
+            onCancel={!editMode ? handleCancel : undefined}
           />
         </div>
       </div>
