@@ -105,16 +105,14 @@ export function EquipesTechniquesList({ sequenceId, onCreateClick, onEditClick }
                 <div className="flex-1">
                   <div className="flex items-center space-x-2 mb-1">
                     <span className="text-white font-medium">
-                      Nom et Prénom: {equipe.prenom} {equipe.nom}
+                      {equipe.prenom} {equipe.nom}
                     </span>
                     <span className={`px-2 py-1 rounded text-xs text-white ${getTypeColor(equipe.type)}`}>
                       {equipe.type}
                     </span>
                   </div>
                   
-                  <div className="text-sm text-gray-300 mb-1">
-                    <span className="text-gray-400">Séquences:</span> {equipe.sequences.join(', ')}
-                  </div>
+                 
                   
                   {equipe.notes && (
                     <div className="text-sm text-gray-400">

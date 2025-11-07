@@ -370,11 +370,13 @@ export default function CreateSequenceForm({ onCancel, editMode = false, sequenc
         {/* Footer */}
         <div className="flex-shrink-0 p-4 md:p-6 border-t border-slate-600">
           <StepFooter
-            currentIndex={currentIndex}
+            currentIndex={STEPS.indexOf(currentStep)}
             total={STEPS.length}
             onPrev={goPrev}
             onNext={goNext}
             onSubmit={handleSubmit}
+            sequenceId={createdSequenceId || ''}
+            sequenceTitle={formData.title || 'Nouvelle séquence'}
             editMode={editMode}
             onCancel={handleCancel}
           />

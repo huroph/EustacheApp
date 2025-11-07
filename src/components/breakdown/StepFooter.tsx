@@ -1,8 +1,9 @@
 'use client'
 
+import { useState } from 'react'
 import Button from '@/components/ui/Button'
-import { sessionStore } from '@/lib/sessionStore-mock'
 import { useFooter } from '@/contexts/FooterContext'
+import SequenceSummaryModal from './SequenceSummaryModal'
 
 interface StepFooterProps {
   currentIndex: number
@@ -10,8 +11,10 @@ interface StepFooterProps {
   onPrev: () => void
   onNext: () => void
   onSubmit: () => void
-  editMode?: boolean  // Nouveau prop pour savoir si on est en mode édition
-  onCancel?: () => void  // Nouvelle prop pour gérer l'annulation à la première étape
+  sequenceId: string
+  sequenceTitle: string
+  editMode?: boolean
+  onCancel?: () => void
 }
 
 export default function StepFooter({ 
@@ -20,111 +23,88 @@ export default function StepFooter({
   onPrev, 
   onNext, 
   onSubmit,
-  editMode = false,  // Valeur par défaut
+  sequenceId,
+  sequenceTitle,
+  editMode = false,
   onCancel
 }: StepFooterProps) {
+  const [showSummaryModal, setShowSummaryModal] = useState(false)
   const isFirst = currentIndex === 0
   const isLast = currentIndex === total - 1
   const { footerState, triggerSubmit, triggerCancel } = useFooter()
-  
-  // Informations sur la séquence courante
-  const currentSequence = sessionStore.getCurrentSequence()
-  
-  const sequenceStats = currentSequence ? {
-    title: currentSequence.title,
-    decorsCount: sessionStore.getDecors(currentSequence.id).length,
-    scenesCount: sessionStore.getScenes(currentSequence.id).length,
-    rolesCount: sessionStore.getRoles(currentSequence.id).length,
-    costumesCount: sessionStore.getCostumes(currentSequence.id).length,
-    accessoiresCount: sessionStore.getAccessoires(currentSequence.id).length,
-    effetsSpeciauxCount: sessionStore.getEffetsSpeciaux(currentSequence.id).length,
-    materielSonCount: sessionStore.getMaterielSon(currentSequence.id).length,
-    machineriesCount: sessionStore.getMachineries(currentSequence.id).length
-  } : null
-
-  // Informations globales
-  const globalStats = {
-    equipesTechniquesCount: sessionStore.getEquipesTechniques().length
-  }
 
   return (
-    <div className="space-y-3">
-      {/* Informations de la séquence */}
-      {isLast && sequenceStats && (
-        <div className="bg-slate-700 p-3 rounded-lg text-sm text-gray-300">
-          <div className="flex items-center justify-between">
-            <span className="font-medium">Résumé de la séquence:</span>
-            <span className="text-blue-400">"{sequenceStats.title}"</span>
-          </div>
-          <div className="flex items-center space-x-4 mt-2 text-xs">
-            <span>{sequenceStats.decorsCount} décor(s)</span>
-            <span>{sequenceStats.scenesCount} scène(s)</span>
-            <span>{sequenceStats.rolesCount} rôle(s)</span>
-            <span>{sequenceStats.costumesCount} costume(s)</span>
-            <span>{sequenceStats.accessoiresCount} accessoire(s)</span>
-            <span>{sequenceStats.effetsSpeciauxCount} effet(s) spéciaux</span>
-            <span>{sequenceStats.materielSonCount} matériel(s) son</span>
-            <span>{sequenceStats.machineriesCount} machinerie(s)</span>
-            <span>{globalStats.equipesTechniquesCount} équipe(s) technique(s)</span>
-          </div>
-        </div>
-      )}
-      
-      {/* Navigation */}
-      <div className="flex items-center justify-between">
-        {footerState.isFormMode ? (
-          // Mode formulaire : Annuler / Créer
-          <>
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={triggerCancel}
-            >
-              Annuler
-            </Button>
-            <Button 
-              type="button" 
-              variant="default" 
-              onClick={triggerSubmit}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              {footerState.submitLabel}
-            </Button>
-          </>
-        ) : (
-          // Mode navigation normale : Précédent / Suivant
-          <>
-            <div className="flex items-center space-x-4">
+    <>
+      {/* Modal récapitulatif */}
+      <SequenceSummaryModal
+        isOpen={showSummaryModal}
+        sequenceId={sequenceId}
+        sequenceTitle={sequenceTitle}
+        onClose={() => setShowSummaryModal(false)}
+        onConfirm={() => {
+          setShowSummaryModal(false)
+          onSubmit()
+        }}
+      />
+
+      {/* Footer de navigation */}
+      <div className="space-y-3">
+        {/* Navigation */}
+        <div className="flex items-center justify-between">
+          {footerState.isFormMode ? (
+            // Mode formulaire : Annuler / Créer
+            <>
               <Button 
                 type="button" 
-                variant="secondary" 
-                onClick={isFirst ? onCancel : onPrev}
-                disabled={isFirst && !onCancel}
+                variant="outline" 
+                onClick={triggerCancel}
               >
-                {isFirst ? 'Annuler' : 'Précédent'}
+                Annuler
               </Button>
-              <span className="text-gray-400 text-sm">
-                {currentIndex + 1} of {total}
-              </span>
-            </div>
-            
-            {isLast ? (
               <Button 
                 type="button" 
                 variant="default" 
-                onClick={onSubmit}
-                className="bg-green-600 hover:bg-green-700 cursor-pointer"
+                onClick={triggerSubmit}
+                className="bg-blue-600 hover:bg-blue-700"
               >
-                {editMode ? 'Enregistrer les modifications' : 'Créer la séquence'}
+                {footerState.submitLabel}
               </Button>
-            ) : (
-              <Button type="button" variant="default" onClick={onNext}>
-                Suivant
-              </Button>
-            )}
-          </>
-        )}
+            </>
+          ) : (
+            // Mode navigation normale : Précédent / Suivant
+            <>
+              <div className="flex items-center space-x-4">
+                <Button 
+                  type="button" 
+                  variant="secondary" 
+                  onClick={isFirst ? onCancel : onPrev}
+                  disabled={isFirst && !onCancel}
+                >
+                  {isFirst ? 'Annuler' : 'Précédent'}
+                </Button>
+                <span className="text-gray-400 text-sm">
+                  {currentIndex + 1} of {total}
+                </span>
+              </div>
+              
+              {isLast ? (
+                <Button 
+                  type="button" 
+                  variant="default" 
+                  onClick={() => setShowSummaryModal(true)}
+                  className="bg-green-600 hover:bg-green-700 cursor-pointer"
+                >
+                  {editMode ? 'Recap modifications' : 'Recap séquence'}
+                </Button>
+              ) : (
+                <Button type="button" variant="default" onClick={onNext}>
+                  Suivant
+                </Button>
+              )}
+            </>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   )
 }
