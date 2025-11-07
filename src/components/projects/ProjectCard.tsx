@@ -1,5 +1,6 @@
 // src/components/projects/ProjectCard.tsx
 import React from 'react'
+import { CheckCircle, Lock, AlertCircle } from 'lucide-react'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 
@@ -101,7 +102,20 @@ export default function ProjectCard({ project, onSelect, onEdit, onDelete }: Pro
         )}
         
         <div className="flex items-center space-x-2">
-          <span className="text-gray-400 text-sm">{project.script_file || 'Aucun script'}</span>
+          {project.script_file ? (
+            <div className="flex items-center space-x-2">
+               <span className="text-green-400 text-sm font-medium">Script</span>
+              <CheckCircle className="w-4 h-4 text-green-400" />
+             
+              <Lock className="w-4 h-4 text-green-400" />
+            </div>
+          ) : (
+            <div className="flex items-center space-x-2">
+              
+              <span className="text-gray-400 text-sm">Aucun script transmis</span>
+              <AlertCircle className="w-4 h-4 text-gray-500" />
+            </div>
+          )}
         </div>
 
         <div className="text-gray-400 text-sm">

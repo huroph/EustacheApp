@@ -118,26 +118,7 @@ export default function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: Si
             )}
           </div>
         ) : (
-          <div
-            onClick={handleProjectClick}
-            className="cursor-pointer bg-gray-800/50 hover:bg-gray-700/60 border border-gray-600/50 rounded-xl p-4 transition-all duration-300 hover:scale-[1.02]"
-          >
-            {!isCollapsed && (
-              <div className="space-y-2">
-                <div className="text-gray-300 text-lg font-medium">
-                  Aucun projet
-                </div>
-                <div className="text-gray-400 text-sm">
-                  Cliquez pour sélectionner
-                </div>
-              </div>
-            )}
-            {isCollapsed && (
-              <div className="flex items-center justify-center">
-                <FolderOpen className="h-5 w-5 text-gray-400" />
-              </div>
-            )}
-          </div>
+          <></>
         )}
       </div>
     </div>

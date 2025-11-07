@@ -45,22 +45,34 @@ export class ProjectsService {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('Utilisateur non connecté')
 
-    const { data, error } = await supabase
-      .from('projects')
-      .select('*')
-      .eq('id', id)
-      .eq('user_id', user.id)
-      .single()
-
-    if (error) {
-      if (error.code === 'PGRST116') {
-        return null // Projet non trouvé ou pas accessible
-      }
-      console.error('Erreur lors de la récupération du projet:', error)
-      throw new Error(`Erreur lors de la récupération du projet: ${error.message}`)
+    // Vérifier que l'ID est un UUID valide
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    if (!uuidRegex.test(id)) {
+      console.warn('ID de projet invalide (pas un UUID):', id)
+      return null
     }
 
-    return data
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('id', id)
+        .eq('user_id', user.id)
+        .single()
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          return null // Projet non trouvé ou pas accessible
+        }
+        console.error('Erreur lors de la récupération du projet:', error)
+        throw new Error(`Erreur lors de la récupération du projet: ${error.message}`)
+      }
+
+      return data
+    } catch (err) {
+      console.error('Erreur dans getById:', err)
+      return null // Retourner null au lieu de faire planter
+    }
   }
 
   /**

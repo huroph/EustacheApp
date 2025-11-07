@@ -25,10 +25,21 @@ export async function getSelectedProject(): Promise<Project | null> {
   const id = getSelectedProjectId()
   if (!id) return null
   
+  // Vérifier que l'ID est un UUID valide
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  if (!uuidRegex.test(id)) {
+    console.warn('ID de projet invalide (pas un UUID):', id)
+    // Nettoyer le localStorage
+    localStorage.removeItem(STORAGE_KEY)
+    return null
+  }
+  
   try {
     return await ProjectsService.getById(id)
   } catch (error) {
     console.error('Erreur lors de la récupération du projet sélectionné:', error)
+    // Si le projet n'existe pas ou n'est pas accessible, nettoyer le localStorage
+    localStorage.removeItem(STORAGE_KEY)
     return null
   }
 }
