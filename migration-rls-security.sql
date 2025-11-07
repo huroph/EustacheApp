@@ -163,12 +163,28 @@ USING (
     WHERE sequences.id = costumes.sequence_id 
     AND projects.user_id = auth.uid()
   )
+)
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM sequences 
+    JOIN projects ON sequences.project_id = projects.id 
+    WHERE sequences.id = costumes.sequence_id 
+    AND projects.user_id = auth.uid()
+  )
 );
 
 -- Template pour decors
 CREATE POLICY "Users can manage decors in own sequences" 
 ON decors FOR ALL 
 USING (
+  EXISTS (
+    SELECT 1 FROM sequences 
+    JOIN projects ON sequences.project_id = projects.id 
+    WHERE sequences.id = decors.sequence_id 
+    AND projects.user_id = auth.uid()
+  )
+)
+WITH CHECK (
   EXISTS (
     SELECT 1 FROM sequences 
     JOIN projects ON sequences.project_id = projects.id 
@@ -187,6 +203,14 @@ USING (
     WHERE sequences.id = scenes.sequence_id 
     AND projects.user_id = auth.uid()
   )
+)
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM sequences 
+    JOIN projects ON sequences.project_id = projects.id 
+    WHERE sequences.id = scenes.sequence_id 
+    AND projects.user_id = auth.uid()
+  )
 );
 
 -- Template pour accessoires
@@ -199,12 +223,28 @@ USING (
     WHERE sequences.id = accessoires.sequence_id 
     AND projects.user_id = auth.uid()
   )
+)
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM sequences 
+    JOIN projects ON sequences.project_id = projects.id 
+    WHERE sequences.id = accessoires.sequence_id 
+    AND projects.user_id = auth.uid()
+  )
 );
 
 -- Template pour effets_speciaux
 CREATE POLICY "Users can manage effets_speciaux in own sequences" 
 ON effets_speciaux FOR ALL 
 USING (
+  EXISTS (
+    SELECT 1 FROM sequences 
+    JOIN projects ON sequences.project_id = projects.id 
+    WHERE sequences.id = effets_speciaux.sequence_id 
+    AND projects.user_id = auth.uid()
+  )
+)
+WITH CHECK (
   EXISTS (
     SELECT 1 FROM sequences 
     JOIN projects ON sequences.project_id = projects.id 

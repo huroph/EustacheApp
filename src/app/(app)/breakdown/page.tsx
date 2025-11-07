@@ -77,12 +77,10 @@ export default function BreakdownPage() {
           <div className="flex items-center space-x-4">
             <Badge>👑</Badge>
             <h1 className="text-2xl font-bold text-white">Dépouillement</h1>
-            <span className="text-gray-400">{project.title}</span>
+            
           </div>
           
-          <div className="flex items-center space-x-4">
-            <span className="text-gray-400">1 / 8</span>
-          </div>
+          
         </div>
 
         {/* Main content grid */}
