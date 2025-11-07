@@ -4,6 +4,7 @@
 import { useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { CheckCircle, Lock, AlertCircle } from 'lucide-react'
 import { useCurrentProject } from '@/lib/currentProject-supabase'
 import { useSequences } from '@/hooks/useSequences'
 import { useSidebar } from '@/hooks/useSidebar'
@@ -192,9 +193,20 @@ export default function BreakdownPage() {
               <div className="bg-gray-800 rounded-lg p-6 flex-shrink-0">
                 <h3 className="text-white text-lg font-semibold mb-4">Informations</h3>
                 <div className="space-y-3 text-sm">
-                  <div className="flex justify-between">
+                  <div className="flex justify-between items-center">
                     <span className="text-gray-400">Script:</span>
-                    <span className="text-white">{project.script_file || 'Non défini'}</span>
+                    {project.script_file ? (
+                      <div className="flex items-center space-x-2">
+                        <CheckCircle className="w-4 h-4 text-green-400" />
+                      
+                        <Lock className="w-4 h-4 text-green-400" />
+                      </div>
+                    ) : (
+                      <div className="flex items-center space-x-2">
+                        <AlertCircle className="w-4 h-4 text-gray-500" />
+                        <span className="text-gray-400">Non défini</span>
+                      </div>
+                    )}
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">Séquences créées:</span>
