@@ -11,27 +11,62 @@ export class ProjectsService {
   
   /**
    * Récupérer tous les projets de l'utilisateur connecté
+   * Inclut les projets dont il est propriétaire ET ceux partagés avec lui
    */
   static async getAll(): Promise<Project[]> {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('Utilisateur non connecté')
 
     try {
-      const { data, error } = await supabase
+      // Récupérer les projets dont l'utilisateur est propriétaire
+      const { data: ownedProjects, error: ownedError } = await supabase
         .from('projects')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
 
-      if (error) {
-        console.error('Erreur Supabase lors de la récupération des projets:', error)
-        console.error('Code d\'erreur:', error.code)
-        console.error('Détails:', error.details)
-        console.error('Hint:', error.hint)
-        throw new Error(`Erreur lors de la récupération des projets: ${error.message}`)
+      if (ownedError) {
+        console.error('Erreur Supabase lors de la récupération des projets possédés:', ownedError)
+        throw new Error(`Erreur lors de la récupération des projets: ${ownedError.message}`)
       }
 
-      return data || []
+      // Récupérer les projets partagés avec l'utilisateur
+      const { data: sharedProjectsData, error: sharedError } = await supabase
+        .from('project_shares')
+        .select(`
+          role,
+          project_id,
+          projects (*)
+        `)
+        .eq('shared_with_user_id', user.id)
+
+      if (sharedError) {
+        console.error('Erreur lors de la récupération des projets partagés:', sharedError)
+        // Ne pas faire échouer toute la requête si les partages échouent
+      }
+
+      // Combiner les projets possédés et partagés
+      const ownedProjectsWithRole = (ownedProjects || []).map(project => ({
+        ...project,
+        user_role: 'owner' as const
+      }))
+
+      const sharedProjects = (sharedProjectsData || [])
+        .filter((share: any) => share.projects) // Filtrer les partages sans projet
+        .map((share: any) => ({
+          ...share.projects,
+          user_role: share.role as 'viewer' | 'editor'
+        }))
+
+      // Fusionner et trier par date de création
+      const allProjects = [...ownedProjectsWithRole, ...sharedProjects]
+        .sort((a, b) => {
+          const dateA = new Date(a.created_at || 0).getTime()
+          const dateB = new Date(b.created_at || 0).getTime()
+          return dateB - dateA
+        })
+
+      return allProjects
     } catch (err) {
       console.error('Erreur réseau ou autre lors de getAll():', err)
       throw err
@@ -39,7 +74,8 @@ export class ProjectsService {
   }
 
   /**
-   * Récupérer un projet par ID (vérifie que le projet appartient à l'utilisateur)
+   * Récupérer un projet par ID 
+   * Vérifie que le projet appartient à l'utilisateur OU qu'il est partagé avec lui
    */
   static async getById(id: string): Promise<Project | null> {
     const { data: { user } } = await supabase.auth.getUser()
@@ -53,25 +89,43 @@ export class ProjectsService {
     }
 
     try {
-      const { data, error } = await supabase
+      // D'abord vérifier si c'est un projet possédé
+      const { data: ownedProject, error: ownedError } = await supabase
         .from('projects')
         .select('*')
         .eq('id', id)
         .eq('user_id', user.id)
         .single()
 
-      if (error) {
-        if (error.code === 'PGRST116') {
-          return null // Projet non trouvé ou pas accessible
+      if (ownedProject) {
+        return {
+          ...ownedProject,
+          user_role: 'owner' as const
         }
-        console.error('Erreur lors de la récupération du projet:', error)
-        throw new Error(`Erreur lors de la récupération du projet: ${error.message}`)
       }
 
-      return data
+      // Si pas trouvé, vérifier s'il est partagé
+      const { data: sharedProject, error: sharedError } = await supabase
+        .from('project_shares')
+        .select(`
+          role,
+          projects (*)
+        `)
+        .eq('project_id', id)
+        .eq('shared_with_user_id', user.id)
+        .single()
+
+      if (sharedProject && sharedProject.projects) {
+        return {
+          ...(sharedProject.projects as any),
+          user_role: sharedProject.role as 'viewer' | 'editor'
+        }
+      }
+
+      return null // Projet non trouvé ou pas accessible
     } catch (err) {
       console.error('Erreur dans getById:', err)
-      return null // Retourner null au lieu de faire planter
+      return null
     }
   }
 

@@ -1,6 +1,6 @@
 // src/components/projects/ProjectCard.tsx
 import React from 'react'
-import { CheckCircle, Lock, AlertCircle } from 'lucide-react'
+import { CheckCircle, Lock, AlertCircle, Pencil, Trash2, Crown, Eye } from 'lucide-react'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 
@@ -15,13 +15,33 @@ interface ProjectCardProps {
     status: string
     code: string
     cover_url?: string | null
+    user_id?: string | null
+    user_role?: 'owner' | 'viewer' | 'editor' | 'none' // Nouveau: rôle de l'utilisateur
   }
+  currentUserId?: string | null
   onSelect?: (projectId: string) => void
   onEdit?: (project: any) => void
   onDelete?: (projectId: string) => void
+  // Nouveaux props pour le mode sélection
+  isSelectionMode?: boolean
+  isSelected?: boolean
+  onToggleSelection?: (projectId: string) => void
 }
 
-export default function ProjectCard({ project, onSelect, onEdit, onDelete }: ProjectCardProps) {
+export default function ProjectCard({ 
+  project, 
+  currentUserId, 
+  onSelect, 
+  onEdit, 
+  onDelete,
+  isSelectionMode = false,
+  isSelected = false,
+  onToggleSelection,
+}: ProjectCardProps) {
+  // Déterminer si c'est le propriétaire du projet
+  const isOwner = !project.user_role || project.user_role === 'owner'
+  const isViewer = project.user_role === 'viewer'
+  
   const formatDateRange = (startDate: string | null, endDate: string | null) => {
     if (!startDate || !endDate) return 'Dates non définies'
     
@@ -38,6 +58,12 @@ export default function ProjectCard({ project, onSelect, onEdit, onDelete }: Pro
   }
 
   const handleCardClick = (e: React.MouseEvent) => {
+    // En mode sélection, gérer le toggle
+    if (isSelectionMode && onToggleSelection) {
+      onToggleSelection(project.id)
+      return
+    }
+
     // Éviter le clic si on clique sur un bouton d'action
     if ((e.target as HTMLElement).closest('button')) {
       return
@@ -48,54 +74,82 @@ export default function ProjectCard({ project, onSelect, onEdit, onDelete }: Pro
   return (
     <div
       onClick={handleCardClick}
-      className="bg-gray-800 rounded-lg border border-gray-700 p-6 cursor-pointer hover:bg-gray-750 transition-colors relative group"
+      className={`bg-gray-800 rounded-lg border p-6 cursor-pointer transition-all relative group ${
+        isSelectionMode 
+          ? isSelected 
+            ? 'border-blue-500 bg-blue-500/10 ring-2 ring-blue-500/50' 
+            : 'border-gray-700 hover:border-blue-400/50'
+          : 'border-gray-700 hover:bg-gray-750'
+      }`}
     >
-      {/* Boutons d'action */}
-      <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-2 z-10">
-        {onEdit && (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={(e) => {
-              e.stopPropagation()
-              onEdit(project)
-            }}
-            className="text-xs"
+      {/* Checkbox en mode sélection */}
+      {isSelectionMode && (
+        <div className="absolute top-4 left-4 z-10">
+          <div 
+            className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+              isSelected 
+                ? 'bg-blue-500 border-blue-500' 
+                : 'border-gray-600 bg-gray-900'
+            }`}
           >
-            ✏️
-          </Button>
-        )}
-        {onDelete && (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={(e) => {
-              e.stopPropagation()
-              onDelete(project.id)
-            }}
-            className="text-xs text-red-400 border-red-600 hover:bg-red-600"
-          >
-            🗑️
-          </Button>
-        )}
-      </div>
+            {isSelected && (
+              <CheckCircle className="w-4 h-4 text-white" fill="white" />
+            )}
+          </div>
+        </div>
+      )}
 
-      {/* Image placeholder */}
-      <div className="w-full h-32 bg-gray-700 rounded-md mb-4 flex items-center justify-center overflow-hidden">
-        {project.cover_url ? (
-          <img 
-            src={project.cover_url} 
-            alt={project.title}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <span className="text-gray-500">Image du projet</span>
-        )}
-      </div>
+      {/* Boutons d'action (seulement si pas en mode sélection ET si propriétaire/éditeur) */}
+      {!isSelectionMode && !isViewer && (
+        <div className="absolute top-4 right-4 flex space-x-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          {onEdit && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={(e) => {
+                e.stopPropagation()
+                onEdit(project)
+              }}
+              className="text-xs cursor-pointer bg-blue-500/10 border-blue-400/30 text-blue-400 hover:bg-blue-500/20 hover:border-blue-400/50 transition-all"
+              title="Éditer le projet"
+            >
+              <Pencil className="w-4 h-4" />
+            </Button>
+          )}
+          {onDelete && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={(e) => {
+                e.stopPropagation()
+                onDelete(project.id)
+              }}
+              className="text-xs cursor-pointer bg-orange-500/10 border-orange-400/30 text-orange-400 hover:bg-orange-500/20 hover:border-orange-400/50 transition-all"
+              title="Supprimer le projet"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
+      )}
 
       {/* Contenu */}
-      <div className="space-y-3">
-        <h3 className="text-white font-semibold text-lg pr-16">{project.title}</h3>
+      <div className={`space-y-3 ${isSelectionMode ? 'ml-9' : ''}`}>
+        <div className="flex items-center space-x-2 pr-16">
+          <h3 className="text-white font-semibold text-lg">{project.title}</h3>
+          {isOwner && (
+            <div className="flex items-center space-x-1 bg-yellow-500/10 border border-yellow-400/30 rounded-full px-2 py-0.5">
+              <Crown className="w-3 h-3 text-yellow-400" />
+              <span className="text-yellow-400 text-xs font-medium">Propriétaire</span>
+            </div>
+          )}
+          {isViewer && (
+            <div className="flex items-center space-x-1 bg-blue-500/10 border border-blue-400/30 rounded-full px-2 py-0.5">
+              <Eye className="w-3 h-3 text-blue-400" />
+              <span className="text-blue-400 text-xs font-medium">Lecteur</span>
+            </div>
+          )}
+        </div>
         
         {project.description && (
           <p className="text-gray-400 text-sm line-clamp-2">{project.description}</p>
@@ -133,9 +187,7 @@ export default function ProjectCard({ project, onSelect, onEdit, onDelete }: Pro
           >
             {project.status}
           </span>
-          <span className="text-gray-400 text-sm">
-            {project.code}
-          </span>
+          
         </div>
       </div>
     </div>

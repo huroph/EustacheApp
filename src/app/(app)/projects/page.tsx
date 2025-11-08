@@ -4,12 +4,14 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
+import { Share2, X, Check } from 'lucide-react'
 import { useProjects } from '@/hooks/useProjects'
 import { useCurrentProject } from '@/lib/currentProject-supabase'
 import { Project } from '@/lib/services/projects'
 import { fixProjectCodes } from '@/utils/fix-projects'
 import ProjectCard from '@/components/projects/ProjectCard'
 import ProjectForm, { ProjectFormData } from '@/components/projects/ProjectForm'
+import { ShareProjectModal } from '@/components/projects/ShareProjectModal'
 import Button from '@/components/ui/Button'
 
 export default function ProjectsPage() {
@@ -21,6 +23,11 @@ export default function ProjectsPage() {
   const [showForm, setShowForm] = useState(false)
   const [editingProject, setEditingProject] = useState<Project | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // États pour le mode partage
+  const [isSelectionMode, setIsSelectionMode] = useState(false)
+  const [selectedProjects, setSelectedProjects] = useState<Set<string>>(new Set())
+  const [shareModalProject, setShareModalProject] = useState<Project | null>(null)
 
   
 
@@ -129,7 +136,38 @@ export default function ProjectsPage() {
     setEditingProject(null)
   }
 
-  
+  // Gestion du mode sélection
+  const handleToggleSelectionMode = () => {
+    setIsSelectionMode(!isSelectionMode)
+    setSelectedProjects(new Set())
+  }
+
+  const handleToggleProjectSelection = (projectId: string) => {
+    const newSelected = new Set(selectedProjects)
+    if (newSelected.has(projectId)) {
+      newSelected.delete(projectId)
+    } else {
+      newSelected.add(projectId)
+    }
+    setSelectedProjects(newSelected)
+  }
+
+  const handleConfirmShare = () => {
+    if (selectedProjects.size === 0) {
+      toast.error('Veuillez sélectionner au moins un projet')
+      return
+    }
+
+    // Pour l'instant, on ne gère que le partage d'un seul projet
+    const firstProjectId = Array.from(selectedProjects)[0]
+    const project = projects.find(p => p.id === firstProjectId)
+    
+    if (project) {
+      setShareModalProject(project)
+      setIsSelectionMode(false)
+      setSelectedProjects(new Set())
+    }
+  }
 
   const formatDateRange = (startDate: string | null, endDate: string | null) => {
     if (!startDate || !endDate) return 'Dates non définies'
@@ -198,20 +236,52 @@ export default function ProjectsPage() {
           <div className="flex justify-between items-start">
             <div>
               <h1 className="text-2xl font-bold text-white">Projets</h1>
-              <p className="text-gray-400">Sélectionnez un projet pour commencer</p>
+              <p className="text-gray-400">
+                {isSelectionMode 
+                  ? `${selectedProjects.size} projet(s) sélectionné(s)`
+                  : 'Sélectionnez un projet pour commencer'}
+              </p>
             </div>
             
             {/* Boutons de gestion */}
             <div className="flex space-x-2">
-              <Button
-                onClick={handleCreateProject}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                + Nouveau projet
-              </Button>
-              
-              {/* Bouton de débogage temporaire */}
-             
+              {isSelectionMode ? (
+                <>
+                  <Button
+                    onClick={handleToggleSelectionMode}
+                    variant="ghost"
+                    className="text-gray-400 hover:text-white"
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    Annuler
+                  </Button>
+                  <Button
+                    onClick={handleConfirmShare}
+                    disabled={selectedProjects.size === 0}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    <Check className="w-4 h-4 mr-2" />
+                    Partager ({selectedProjects.size})
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    onClick={handleToggleSelectionMode}
+                    variant="outline"
+                    className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                  >
+                    <Share2 className="w-4 h-4 mr-2" />
+                    Partager
+                  </Button>
+                  <Button
+                    onClick={handleCreateProject}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    + Nouveau projet
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -243,6 +313,9 @@ export default function ProjectsPage() {
                       onSelect={handleProjectClick}
                       onEdit={handleEditProject}
                       onDelete={handleDeleteProject}
+                      isSelectionMode={isSelectionMode}
+                      isSelected={selectedProjects.has(project.id)}
+                      onToggleSelection={handleToggleProjectSelection}
                     />
                   ))}
                 </div>
@@ -251,6 +324,16 @@ export default function ProjectsPage() {
           )}
         </div>
       </div>
+
+      {/* Modal de partage */}
+      {shareModalProject && (
+        <ShareProjectModal
+          projectId={shareModalProject.id}
+          projectName={shareModalProject.title}
+          isOpen={!!shareModalProject}
+          onClose={() => setShareModalProject(null)}
+        />
+      )}
     </div>
   )
 }
